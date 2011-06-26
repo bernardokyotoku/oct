@@ -4,53 +4,16 @@ import logging as log
 import numpy as np
 import matplotlib.pyplot as plt
 from configobj import ConfigObj
+from validate import Validator
 
-def typing(config):
-	def section(config):
-		for el in config:
-			config[el] = cast[el](config[el])
-		return config
+def log_type(value):
+	try:
+		return getattr(log,value)
+	except AttributeError:
+		pass
+	return int(value)	
 
-	scope_symbol = lambda x:getattr(ordered_symbols,x)
-	log_type = lambda x:getattr(log,x)
-	cast = {
-		'ChanCharacteristic' : 	section,
-		'channelList' : 	str,
-		'coupling' : 		int,#scope_symbol
-		'delay' : 		float,
-		'enabled' : 		bool,
-		'enforceRealtime' : 	bool,
-		'holdoff' : 		float,
-		'Horizontal' : 		section,
-		'level' : 		float,
-		'log':			int,#log_type,
-		'maxFrequency' : 	int,
-		'numPts' : 		int,
-		'numRecords' : 		int,
-		'offset' : 		float,
-		'probeAttenuation' : 	float,
-		'refPosition' : 	float,
-		'sampleRate' : 		float,
-		'scope':		section,
-		'slope' : 		int,#int,#scope_symbol
-		'triggerCoupling' : 	int,#scope_symbol
-		'Trigger' : 		section,
-		'triggerSource' : 	str,#int,#scope_symbol
-		'trigger_type' : 	str,
-		'VerticalRef':		section,
-		'VerticalSample' : 	section,
-		'voltageRange' : 	int,
-		'resample_poly_coef':	section,
-		'p0' : 			float,
-		'p1' : 			float,
-		'p2' : 			float,
-		'p3' : 			float,
-		'p4' : 			float,
-		'p5' : 			float,
-		'p6' : 			float,
-		'p7' : 			float,
-	}
-	return section(config)
+validator = Validator({'log':log_type})
 
 def parse():
 	import argparse
@@ -64,8 +27,8 @@ def parse():
 	return parser.parse_args()
 
 arg = parse()
-raw_config = ConfigObj('settings.cfg')
-config = typing(raw_config)
+config = ConfigObj('config.ini',configspec='configspec.ini')
+config.validate(validator)
 log.basicConfig(filename='oct.log',level=config['log'])
 scope_config = config['scope']
 if arg.horz_cal:
@@ -99,10 +62,10 @@ if arg.get_p:
 	zero_y = np.arange(len(zero_x))
 	data = zero_x
 	p = np.polyfit(zero_y,zero_x,7)
-	raw_config['resample_poly_coef'] = {}
+	config['resample_poly_coef'] = {}
 	for i in p:
-		raw_config['resample_poly_coef']['p%d'%np.where(p==i)] = i
-	raw_config.write()
+		config['resample_poly_coef']['p%d'%np.where(p==i)] = i
+	config.write()
 	f = np.poly1d(p)
 	data = np.vstack([zero_x,f(zero_y)]).T
 	from scipy import interpolate
