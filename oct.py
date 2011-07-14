@@ -114,6 +114,9 @@ def single_scan_path(X0,Xf,t,lineDensity):
 	park = third_order_line(Xf,0,0,t,pitch,0)
 	return np.hstack([start,scan[0:-1],park])
     	
+def positioning(daq_task,config)
+	config['daq']['positioning']
+	task.configure_timing_sample_clock(source='OnboardClock', rate=1, active_edge='rising', sample_mode='finite', samples_per_channel=1000)
 	
 def make_setpositionpath():
 	pass
