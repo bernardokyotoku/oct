@@ -174,6 +174,7 @@ data = data[0]
 y = data
 if arg.non_cor_fft:
 	data = abs(np.fft.fft(data))
+
 if arg.get_p:
 	data =  y > 0
 	t = np.logical_xor(data,np.roll(data,1))
@@ -192,6 +193,7 @@ if arg.get_p:
 if arg.resample:
 	data = resample(data,config['resample_poly_coef'])
 	x = None 
+
 if arg.fft:
 	data = abs(np.fft.fft(data))
 
@@ -214,7 +216,6 @@ if arg.scan_3D:
 	p = Process(target=fetcher, args=(scope,queue))
 	scope.InitiateAcquisition()
 	p.start()
-	
 	park(daq)
 
 def fetcher(scope,queue):
