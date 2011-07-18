@@ -7,6 +7,7 @@ from configobj import ConfigObj
 from validate import Validator
 from nidaqmx import AnalogOutputTask
 from time import sleep
+from multiprocessing import Process, Queue
 
 def log_type(value):
 	try:
@@ -23,13 +24,15 @@ def parse():
 	parser.description = "OCT client."
 	parser.add_argument('--horz-cal',action='store_true')
 	parser.add_argument('--plot',action='store_true')
-	parser.add_argument('--scan',action='store_true')
 	parser.add_argument('--x',action='store_true')
 	parser.add_argument('--get-p',action='store_true')
 	parser.add_argument('--resample',action='store_true')
 	parser.add_argument('--fft',action='store_true')
 	parser.add_argument('--non-cor-fft',action='store_true')
 	parser.add_argument('--line',action='store_true')
+	parser.add_argument('--scan-3D',action='store_true')
+	parser.add_argument('--scan-continuous',action='store_true')
+	parser.add_argument('--scan',action='store_true')
 	return parser.parse_args()
 
 def scan(scope,daq):
@@ -40,11 +43,17 @@ def scan(scope,daq):
 	scope.Fetch("",data)
 	return data
 
+def position(point,daq):
+	pass
+
+def park(daq):
+	position([0,0],daq)
+
 def prepare_daq(path,daq_config):
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
-	daq.configure_timing_sample_clock(**daq_config['Trigger'])
+	daq.configure_timing_sample_clock(**daq_config['positioning'])
 	daq.write(path,auto_start=False)
 	return daq
 
@@ -82,6 +91,13 @@ def resample(raw_data,config):
 def transform(rsp_data):
 	return abs(np.fft.fft(data))
 
+def allocate_memory(config):
+	hor = config['Horizontal']
+	X = hor['numPts']
+	Y = hor['numRecords']
+	Z = config['numTomograms']
+	return np.zeros([Z,X,Y],order='F',dtype=np.float64)
+
 def line(begin,end,lineDensity):
 	lineDensity = float(lineDensity)
 	v = np.array(end) - np.array(begin)
@@ -118,6 +134,9 @@ def single_scan_path(X0,Xf,t,lineDensity):
 	park = third_order_line(Xf,0,0,t,pitch,0)
 	return np.hstack([start,scan[0:-1],park])
     	
+def positioning(daq_task,config)
+	config['daq']['positioning']
+	task.configure_timing_sample_clock(source='OnboardClock', rate=1, active_edge='rising', sample_mode='finite', samples_per_channel=1000)
 	
 def make_setpositionpath():
 	pass
@@ -157,6 +176,7 @@ data = data[0]
 y = data
 if arg.non_cor_fft:
 	data = abs(np.fft.fft(data))
+
 if arg.get_p:
 	data =  y > 0
 	t = np.logical_xor(data,np.roll(data,1))
@@ -175,6 +195,7 @@ if arg.get_p:
 if arg.resample:
 	data = resample(data,config['resample_poly_coef'])
 	x = None 
+
 if arg.fft:
 	data = abs(np.fft.fft(data))
 
@@ -191,6 +212,29 @@ if arg.scan:
 	rsp_data = resample(raw_data)
 	fft_data = transform(rsp_data)
 	abs_data = abs(fft_data)
+
+if arg.scan_3D:
+	path = loadpath()
+	position(path[0],daq)
+	data = alloc_mem(config['scope3D'])
+	daq.write(path)
+	prepare_scope(scope,config['scope3D'])
+	queue = Queue()
+	p = Process(target=fetcher, args=(scope,queue))
+	scope.InitiateAcquisition()
+	p.start()
+	park(daq)
+
+def fetcher(scope,queue):
+	scope.Fetch(data)
+	queue.put(data)
+
+if arg.scan_continuous:
+	path = loadpath()
+	position(path[0],daq)
+	daq.configure_timing_sample_clock(**daq_config['scanContinuous'])
+	daq.write(path)
+	park(daq)
 
 if arg.plot:
 	if x is None:
