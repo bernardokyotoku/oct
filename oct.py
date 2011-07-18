@@ -1,4 +1,4 @@
-from niScope import Scope
+import niScope
 import ordered_symbols
 import logging as log
 import numpy as np
@@ -35,21 +35,21 @@ def parse():
 def scan(scope,daq):
 	scope.InitiateAcquisition()
 	daq.start()
-	while scope.complete():
+	while scope.AcquisitionStatus() != niScope.NISCOPE_VAL_ACQ_COMPLETE:
 		sleep(0.1)
-	scope.Fetch(data)
+	scope.Fetch("",data)
 	return data
 
 def prepare_daq(path,daq_config):
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
-	daq.configure_timing_sample_clock(**daqu_config['Trigger'])
+	daq.configure_timing_sample_clock(**daq_config['Trigger'])
 	daq.write(path,auto_start=False)
 	return daq
 
 def prepare_scope(scope_config):
-	scope = Scope(scope_config['dev'])
+	scope = niScope.Scope(scope_config['dev'])
 	log.debug('Scope initialized ok')
 	scope.ConfigureHorizontalTiming(**scope_config['Horizontal'])
 	log.debug('Scope horizontal configured')
@@ -92,6 +92,10 @@ def line(begin,end,lineDensity):
 	return line.T
 
 def poly3(x1,x2,t1,t2,r1,r2):
+	"""
+	Returns the polynomial coeficients for a curve with the position and the
+	derivative defined at two points of the curve.
+	"""
 	from numpy.linalg import solve
 	A = np.array([
 	[	3*t1**2,	2*t1, 	1,	0	],
@@ -126,8 +130,6 @@ def make_acquisitionwindowpath():
 
 def make_parkpath():
 	pass
-
-	
 
 arg = parse()
 config = ConfigObj('config.ini',configspec='configspec.ini')
@@ -177,9 +179,14 @@ if arg.fft:
 	data = abs(np.fft.fft(data))
 
 if arg.scan:
-	path = loadpath()
+	image_config = config['image']
+	lineDensity = image_config['density']
+	length = image_config['length']
+	X = single_scan_path(-length/2,length/2,50,lineDensity)
+	path = np.vstack([X,np.zeros(X.shape)]).T
 	daq = prepare_daq(path,config['daq'])
-	scope = prepare_scope(scope)
+	scope = prepare_scope(scope_config)
+	scope.NumRecords = path.shape[1]
 	raw_data = scan(scope,daq)
 	rsp_data = resample(raw_data)
 	fft_data = transform(rsp_data)
