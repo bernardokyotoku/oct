@@ -96,7 +96,8 @@ def allocate_memory(config):
 	X = hor['numPts']
 	Y = hor['numRecords']
 	Z = config['numTomograms']
-	return np.zeros([Z,X,Y],order='F',dtype=np.float64)
+	data = np.zeros([Z,X,Y],order='C',dtype=np.float64)
+	return data
 
 def line(begin,end,lineDensity):
 	lineDensity = float(lineDensity)
@@ -134,7 +135,7 @@ def single_scan_path(X0,Xf,t,lineDensity):
 	park = third_order_line(Xf,0,0,t,pitch,0)
 	return np.hstack([start,scan[0:-1],park])
     	
-def positioning(daq_task,config)
+def positioning(daq_task,config):
 	config['daq']['positioning']
 	task.configure_timing_sample_clock(source='OnboardClock', rate=1, active_edge='rising', sample_mode='finite', samples_per_channel=1000)
 	
@@ -214,16 +215,20 @@ if arg.scan:
 	abs_data = abs(fft_data)
 
 if arg.scan_3D:
-	path = loadpath()
-	position(path[0],daq)
-	data = alloc_mem(config['scope3D'])
-	daq.write(path)
-	prepare_scope(scope,config['scope3D'])
-	queue = Queue()
-	p = Process(target=fetcher, args=(scope,queue))
-	scope.InitiateAcquisition()
-	p.start()
-	park(daq)
+#	path = loadpath()
+#	position(path[0],daq)
+	data = allocate_memory(config['scope3D'])
+#	daq.write(path)
+	scope = prepare_scope(config['scope3D'])
+#	queue = Queue()
+#	p = Process(target=fetcher, args=(scope,queue))
+	for tomogram in data:
+		scope.InitiateAcquisition()
+		scope.Fetch(config['scope3D']['VerticalSample']['channelList'],tomogram)
+	shape =	[data.shape[i] for i in [0,2,1]]
+	data = data.reshape(shape)
+#	p.start()
+#	park(daq)
 
 def fetcher(scope,queue):
 	scope.Fetch(data)
@@ -237,6 +242,9 @@ if arg.scan_continuous:
 	park(daq)
 
 if arg.plot:
+	if len(data.shape) == 3:
+		data = data[0,0,:]
+		x = None
 	if x is None:
 		x = np.arange(len(data))
 	import matplotlib.pyplot as plt

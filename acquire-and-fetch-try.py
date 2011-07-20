@@ -1,6 +1,9 @@
 import niScope
 import numpy as np
-X,Y,Z = 2420,500,500
+from time import sleep
+import matplotlib.pyplot as plt
+import timeit
+X,Y,Z = 2420,1000,10
 scope = niScope.Scope("Dev4")
 scope.ConfigureHorizontalTiming( numPts = X,
 		sampleRate = 40000000.0,
@@ -8,7 +11,7 @@ scope.ConfigureHorizontalTiming( numPts = X,
 		numRecords = Y,
 		refPosition = 0.0)
 scope.ConfigureVertical( coupling = 1,
-		channelList = 1,
+		channelList = "0",
 		enabled = True,
 		probeAttenuation = 1.0,
 		offset = 0.0,
@@ -23,10 +26,23 @@ scope.ConfigureTrigger("Edge",
 scope.ExportSignal( signal = 4 ,
 		outputTerminal = 'VAL_RTSI_0',
 		signalIdentifier = "End of record",)
-scope.FetchNumberRecords = Y
-data = np.zeros([Z,X,Y],order='F',dtype.float64)
+data = np.zeros([Z,X,Y],order='C',dtype=np.int32)
+i=0
+#s = """\
+#try:
+#	scope.InitiateAcquisition()
+#	scope.Fetch("0",data[0])
+#	print "3"
+#except Exception:
+#	pass
+#		"""
+#t = timeit.Timer(stmt=s)
+#print "pass %.2f usec/pass"%(100*t.timeit(number=100)/100) 
 for tomogram in data:
 	scope.InitiateAcquisition()
-	scope.Fetch(data)
-	print "done"
-
+	scope.Fetch("0",tomogram)
+	i +=1
+	print i 
+data = data.reshape((Z,Y,X))
+#plt.plot(data[10,499,:])
+#plt.show()
