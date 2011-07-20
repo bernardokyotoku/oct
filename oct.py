@@ -51,7 +51,7 @@ def position(point,daq):
 def park(daq):
 	position([0,0],daq)
 
-def prepare_daq(path,daq_config):
+def prepare_daq(path,daq_config,mode):
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
@@ -203,7 +203,7 @@ if arg.scan:
 	length = image_config['length']
 	X = single_scan_path(-length/2,length/2,50,lineDensity)
 	path = np.vstack([X,np.zeros(X.shape)]).T
-	daq = prepare_daq(path,config['daq'])
+	daq = prepare_daq(path,config['daq'],"positioning")
 	scope = prepare_scope(scope_config)
 	scope.NumRecords = path.shape[1]
 	raw_data = scan(scope,daq)
@@ -218,10 +218,16 @@ if arg.scan_3D:
 #	daq.write(path)
 	scope = prepare_scope(config['scope3D'])
 #	queue = Queue()
-#	p = Process(target=fetcher, args=(scope,queue))
+#	reposition_path = third_order_line(Xf,X0,0,10,pitch,pitch)
+#	scan = np.linspace(X0,Xf,num)
+#	path = np.hstack((scan,reposition_path))
+#	daq = prepare_daq(path,config['daq'],"positioning")
+#	daq.close()
 	for tomogram in data:
+#		daq = prepare_daq(path,config['daq'],"scan3D")
 		scope.InitiateAcquisition()
 		scope.Fetch(config['scope3D']['VerticalSample']['channelList'],tomogram)
+#		daq.close()
 #		queue.put(tomogram)
 	# numpy arrays and niscope arrays have weird order, code below fix it
 	new_shape = [data.shape[i] for i in [0,2,1]]
