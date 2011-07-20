@@ -24,6 +24,8 @@ def parse():
 	parser.description = "OCT client."
 	parser.add_argument('--horz-cal',action='store_true')
 	parser.add_argument('--plot',action='store_true')
+	parser.add_argument('--img-plot',action='store_true')
+	parser.add_argument('--store',action='store_true')
 	parser.add_argument('--x',action='store_true')
 	parser.add_argument('--get-p',action='store_true')
 	parser.add_argument('--resample',action='store_true')
@@ -78,14 +80,14 @@ def resample(raw_data,config):
 	f = np.poly1d(p)
 	old_x = f(np.arange(raw_data.shape[-1]))
 	new_x = np.linspace(0,raw_data.shape[-1],1024)
-	resampled = np.zeros(raw_data.shape)
+	resampled = np.zeros((raw_data.shape[0],1024))
 	if len(raw_data.shape) == 1:
 		tck = interpolate.splrep(old_x,raw_data,s=0)
 		resampled = interpolate.splev(new_x,tck)
 	else:
-		for line in raw_data:
-			tck = interpolate.splrep(old_x,line)
-			resampled[raw_data.index(line)] = interpolate.splev(new_x,tck)
+		for line in range(raw_data.shape[0]):
+			tck = interpolate.splrep(old_x,raw_data[line])
+			resampled[line] = interpolate.splev(new_x,tck)
 	return resampled
 
 def transform(rsp_data):
@@ -193,12 +195,7 @@ if arg.get_p:
 	config.write()	
 	x = zero_x
 
-if arg.resample:
-	data = resample(data,config['resample_poly_coef'])
-	x = None 
 
-if arg.fft:
-	data = abs(np.fft.fft(data))
 
 if arg.scan:
 	image_config = config['image']
@@ -225,14 +222,17 @@ if arg.scan_3D:
 	for tomogram in data:
 		scope.InitiateAcquisition()
 		scope.Fetch(config['scope3D']['VerticalSample']['channelList'],tomogram)
-	shape =	[data.shape[i] for i in [0,2,1]]
-	data = data.reshape(shape)
+#		queue.put(tomogram)
+	# numpy arrays and niscope arrays have weird order, code below fix it
+	new_shape = [data.shape[i] for i in [0,2,1]]
+	data = data.reshape(new_shape)
+
 #	p.start()
 #	park(daq)
 
-def fetcher(scope,queue):
-	scope.Fetch(data)
-	queue.put(data)
+def processor(queue):
+	raw_data = queue.get()
+	rsp_data = reample(raw_data)
 
 if arg.scan_continuous:
 	path = loadpath()
@@ -241,9 +241,21 @@ if arg.scan_continuous:
 	daq.write(path)
 	park(daq)
 
+if arg.resample:
+	if len(data.shape) == 3:
+		data = data[0,:,:]
+	data = resample(data,config['resample_poly_coef'])
+	x = None 
+
+if arg.fft:
+	data = abs(np.fft.fft(data))
+
 if arg.plot:
 	if len(data.shape) == 3:
 		data = data[0,0,:]
+		x = None
+	if len(data.shape) == 2:
+		data = data[0]
 		x = None
 	if x is None:
 		x = np.arange(len(data))
@@ -251,3 +263,15 @@ if arg.plot:
 	plt.plot(x,data)
 	plt.show()
 
+if arg.img_plot:
+	if len(data.shape) == 3:
+		data = data[0]
+	if len(data.shape) == 2:
+		data = data
+	import matplotlib.pyplot as plt
+	plt.imshow(data)
+	plt.show()
+
+if arg.store:
+	filename = "data.dat"
+	np.savetxt(filename,data)
