@@ -51,12 +51,12 @@ def position(point,daq):
 def park(daq):
 	position([0,0],daq)
 
-def prepare_daq(path,daq_config,mode):
+def prepare_daq(path,daq_config,mode,auto_start):
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
 	daq.configure_timing_sample_clock(**daq_config['positioning'])
-	daq.write(path,auto_start=False)
+	daq.write(path,auto_start=auto_start)
 	return daq
 
 def prepare_scope(scope_config):
@@ -124,6 +124,16 @@ def poly3(x1,x2,t1,t2,r1,r2):
 	])
 	B = np.array([r1, r2, x1, x2])
 	return solve(A,B)
+
+def make_scan_path(x0,xf,y0,yf,numRecords,numTomograms):
+	x = np.linspace(x0,xf,numRecords)
+	x.shape = (1,) + x.shape
+	X = x*np.ones((numTomograms,1))
+	y = np.linspace(y0,yf,numTomograms)
+	y.shape = y.shape + (1,)
+	Y = y*np.ones(numRecords)
+	scan_path = np.dstack([X,Y])
+	return scan_path
 
 def third_order_line(x1,x2,t1,t2,r1,r2):
     	f = np.poly1d(poly3(x1,x2,t1,t2,r1,r2))
@@ -214,20 +224,28 @@ if arg.scan:
 if arg.scan_3D:
 #	path = loadpath()
 #	position(path[0],daq)
-	data = allocate_memory(config['scope3D'])
+	config3D = config["scope3D"]
+	data = allocate_memory(config3D)
 #	daq.write(path)
-	scope = prepare_scope(config['scope3D'])
+	scope = prepare_scope(config3D)
 #	queue = Queue()
 #	reposition_path = third_order_line(Xf,X0,0,10,pitch,pitch)
 #	scan = np.linspace(X0,Xf,num)
 #	path = np.hstack((scan,reposition_path))
 #	daq = prepare_daq(path,config['daq'],"positioning")
 #	daq.close()
-	for tomogram in data:
-#		daq = prepare_daq(path,config['daq'],"scan3D")
+	numTomograms = config3D['numTomograms']
+#	scan_path = 
+#	return_path
+	for i in range(numTomograms):
+		tomogram = data[i]
+		daq = prepare_daq(scan_path[i],config['daq'],"scan3D")
 		scope.InitiateAcquisition()
-		scope.Fetch(config['scope3D']['VerticalSample']['channelList'],tomogram)
-#		daq.close()
+		scope.Fetch(config3D['VerticalSample']['channelList'],tomogram)
+		del daq
+		daq = prepare_daq(return_path[i],config['daq'],"positioning",auto_start=True)
+		daq.wait_until_done()
+		del daq
 #		queue.put(tomogram)
 	# numpy arrays and niscope arrays have weird order, code below fix it
 	new_shape = [data.shape[i] for i in [0,2,1]]
