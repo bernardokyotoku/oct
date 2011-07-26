@@ -123,10 +123,6 @@ if arg.scan_3D:
 #	p.start()
 #	park(daq)
 
-def processor(queue):
-	raw_data = queue.get()
-	rsp_data = reample(raw_data)
-
 if arg.scan_continuous:
 	path = loadpath()
 	position(path[0],daq)

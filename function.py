@@ -24,6 +24,10 @@ def scan(scope,daq):
 	scope.Fetch("",data)
 	return data
 
+def processor(queue):
+	raw_data = queue.get()
+	rsp_data = reample(raw_data)
+
 def position(point,daq):
 	pass
 
@@ -40,16 +44,11 @@ def prepare_daq(path,daq_config,mode,auto_start):
 
 def prepare_scope(scope_config):
 	scope = niScope.Scope(scope_config['dev'])
-	log.debug('Scope initialized ok')
 	scope.ConfigureHorizontalTiming(**scope_config['Horizontal'])
-	log.debug('Scope horizontal configured')
 	scope.ExportSignal(**scope_config['ExportSignal'])
 	scope.ConfigureTrigger(**scope_config['Trigger'])
-	log.debug('Scope trigger configured')
 	scope.ConfigureVertical(**scope_config['VerticalRef'])
-	log.debug('Scope ref configured')
 	scope.ConfigureVertical(**scope_config['VerticalSample'])
-	log.debug('Scope sample configured')
 	return scope
 
 def resample(raw_data,config):
@@ -91,8 +90,8 @@ def line(begin,end,lineDensity):
 
 def poly3(x1,x2,t1,t2,r1,r2):
 	"""
-	Returns the polynomial coeficients for a curve with the position and the
-	derivative defined at two points of the curve.
+	Returns the polynomial coeficients for a curve with the position and 
+	the derivative defined at two points of the curve.
 	"""
 	from numpy.linalg import solve
 	A = np.array([
@@ -113,6 +112,18 @@ def make_scan_path(x0,xf,y0,yf,numRecords,numTomograms):
 	Y = y*np.ones(numRecords)
 	scan_path = np.dstack([X,Y])
 	return scan_path
+
+def make_return_path(x0,xf,y0,yf,tf,r,N,numTomograms):
+	f = np.poly1d(poly3(x0,xf,0,tf,r,r))
+	path = f(np.linspace(0,tf,N))
+	path.shape += (1,)
+	path_x = path*np.ones(numTomograms)
+	path_x = path_x.T
+	y = np.linspace(y0,yf,numTomograms)
+	intervals = [[y[i],y[i+1]] for i in range(numTomograms-1)]+[[y[-1]]*2]
+	path_y = np.vstack([np.linspace(i[0],i[1],N) for i in intervals])
+	p = np.dstack((path_x,path_y))
+	return p
 
 def third_order_line(x1,x2,t1,t2,r1,r2):
     	f = np.poly1d(poly3(x1,x2,t1,t2,r1,r2))
