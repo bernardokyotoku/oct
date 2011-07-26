@@ -91,21 +91,21 @@ if arg.scan:
 	abs_data = abs(fft_data)
 
 if arg.scan_3D:
-#	path = loadpath()
-#	position(path[0],daq)
 	config3D = config["scope3D"]
 	data = allocate_memory(config3D)
-#	daq.write(path)
 	scope = prepare_scope(config3D)
-#	queue = Queue()
-#	reposition_path = third_order_line(Xf,X0,0,10,pitch,pitch)
-#	scan = np.linspace(X0,Xf,num)
-#	path = np.hstack((scan,reposition_path))
-#	daq = prepare_daq(path,config['daq'],"positioning")
-#	daq.close()
 	numTomograms = config3D['numTomograms']
-#	scan_path = 
-#	return_path
+	conf = config['daq']['positioning']
+	f = config['laser']['frequency']
+	path = config['daq']['path'] 
+	numRec = config3D['Horizontal']['numRecords']
+	tf = float(numRec)/f
+	import pdb;pdb.set_trace()
+	r = (path['xf']-path['x0'])/tf
+	N = conf['samples_per_channel']
+	x0,xf,y0,yf=path['x0'],path['xf'],path['y0'],path['yf']
+	return_path = make_return_path(x0,xf,y0,yf,tf,r,N,numTomograms)
+	scan_path = make_scan_path(x0,xf,y0,yf,numRec,numTomograms)
 	for i in range(numTomograms):
 		tomogram = data[i]
 		daq = prepare_daq(scan_path[i],config['daq'],"scan3D")
@@ -115,13 +115,9 @@ if arg.scan_3D:
 		daq = prepare_daq(return_path[i],config['daq'],"positioning",auto_start=True)
 		daq.wait_until_done()
 		del daq
-#		queue.put(tomogram)
 	# numpy arrays and niscope arrays have weird order, code below fix it
 	new_shape = [data.shape[i] for i in [0,2,1]]
 	data = data.reshape(new_shape)
-
-#	p.start()
-#	park(daq)
 
 if arg.scan_continuous:
 	path = loadpath()
