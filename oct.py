@@ -1,10 +1,8 @@
-import niScope
 import ordered_symbols
 import numpy as np
 import matplotlib.pyplot as plt
 from configobj import ConfigObj
 from validate import Validator
-from nidaqmx import AnalogOutputTask
 from time import sleep
 from multiprocessing import Process, Queue
 from function import *
@@ -34,6 +32,8 @@ arg = parse()
 config = ConfigObj('config.ini',configspec='configspec.ini')
 if not config.validate(validator):
 	raise Exception('config.ini does not validate with configspec.ini.')
+import niScope
+from nidaqmx import AnalogOutputTask
 logging.basicConfig(filename='oct.log',level=config['log'])
 scope_config = config['scope']
 if arg.line:
@@ -73,8 +73,6 @@ if arg.get_p:
 		config['resample_poly_coef']['p%d'%np.where(p==i)] = i
 	config.write()	
 	x = zero_x
-
-
 
 if arg.scan:
 	image_config = config['image']
