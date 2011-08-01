@@ -1,12 +1,11 @@
 try:
 	import niScope
-except e:
+except Exception:
 	print "niScope missing, continuing anyway"
 try:
 	from nidaqmx import AnalogOutputTask
-except e:
+except Exception:
 	print "nidaqmx missing, continuing anyway"
-import ordered_symbols
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -65,8 +64,8 @@ def park(daq):
 def prepare_daq(path,daq_config,mode,auto_start=True):
 	X_mpV = daq_config['X_mpV']
 	Y_mpV = daq_config['Y_mpV']
-	T = np.array([[X_mpV,Y_mpV]]).T
-	signal = path*T
+	T = np.array([[X_mpV,Y_mpV]])
+	signal = (path*T).T
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
@@ -179,7 +178,7 @@ def scan(config,data):
 	fft_data = transform(rsp_data)
 	abs_data = abs(fft_data)
 
-def scan_3d(config,data):
+def scan_3D(config,data):
 	config3D = config["scope3D"]
 	data = allocate_memory(config3D)
 	scope = prepare_scope(config3D)
@@ -212,10 +211,9 @@ def scan_continuous(config,data):
 	arg = config['daq']['path'].dict()
 	arg['N'] = config['scope']['Horizontal']['numRecords']
 	scan_path = make_line_path(**arg)
-	position(scan_path[0],daq)
 	scope = prepare_scope(config['scope'])
 	while go:
-		daq = prepare_daq(scan_path,config['daq'],'scanContinuous'):
+		daq = prepare_daq(scan_path,config['daq'],'scanContinuous')
 		scope.InitiateAcquisition()
 		scope.Fetch('0',data)
 		del daq

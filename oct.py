@@ -1,4 +1,3 @@
-import ordered_symbols
 import numpy as np
 import function
 import logging
@@ -37,8 +36,10 @@ if not config.validate(validator):
 	raise Exception('config.ini does not validate with configspec.ini.')
 logging.basicConfig(filename='oct.log',level=config['log'])
 
+data = []
 for i in args:
 	if getattr(arg,i):
+		print i
 		fun = getattr(function,i)
 		data = fun(config,data)	
 
