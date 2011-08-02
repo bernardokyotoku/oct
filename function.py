@@ -65,7 +65,7 @@ def prepare_daq(path,daq_config,mode,auto_start=True):
 	X_mpV = daq_config['X_mpV']
 	Y_mpV = daq_config['Y_mpV']
 	T = np.array([[X_mpV,Y_mpV]])
-	signal = (path*T).T
+	signal = path*T
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
@@ -211,7 +211,7 @@ def scan_continuous(config,data):
 	arg = config['daq']['path'].dict()
 	arg['N'] = config['scope']['Horizontal']['numRecords']
 	scan_path = make_line_path(**arg)
-	scope = prepare_scope(config['scope'])
+	scope = prepare_scope(config['scope_continuous'])
 	while go:
 		daq = prepare_daq(scan_path,config['daq'],'scanContinuous')
 		scope.InitiateAcquisition()
