@@ -199,7 +199,7 @@ def scan_3D(config,data):
 	r = (path['xf']-path['x0'])/tf
 	N = conf['samples_per_channel']
 	x0,xf,y0,yf=path['x0'],path['xf'],path['y0'],path['yf']
-	return_path = make_return_path(x0,xf,y0,yf,tf,r,N,numTomograms)
+	return_path = make_return_3D_path(x0,xf,y0,yf,tf,r,N,numTomograms)
 	scan_path = make_scan_path(x0,xf,y0,yf,numRec,numTomograms)
 	for i in range(numTomograms):
 		tomogram = data[i]
@@ -239,6 +239,7 @@ def scan_continuous(config,data):
 		scope.InitiateAcquisition()
 		scope.Fetch('0',data[0])
 		del daq
+		return_mirror(config)
 		shape = list(data[0].shape)
 		shape.reverse()
 		d = data[0].reshape(shape).T
@@ -249,9 +250,15 @@ def scan_continuous(config,data):
 
 def return_mirror(config):
 	param = config['daq']['path'].dict()
-	param['r']
-	return_path = make_return_path(x0,xf,y0,yf,tf,r,N,numTomograms)
-	daq = prepare_daq(scan_path,config['daq'],'positioning')
+	param['N'] = config['scope_continuous']['Horizontal']['numRecords']
+	laser_frequency = config['laser']['frequency']
+	param['tf'] = param['N']/laser_frequency
+	param['rx'] = (param['xf']-param['x0'])/param['tf']
+	param['ry'] = (param['yf']-param['y0'])/param['tf']
+	return_path = make_return_continuous_path(**param).T
+	daq = prepare_daq(return_path,config['daq'],'positioning')
+	daq.wait_until_done()
+	del daq
 
 def resample_d(config,data):
 	if len(data.shape) == 3:

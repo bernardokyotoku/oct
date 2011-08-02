@@ -35,7 +35,7 @@ def make_scan_path(x0,xf,y0,yf,numRecords,numTomograms):
 	scan_path = np.dstack([X,Y])
 	return scan_path
 
-def make_return_path(x0,xf,y0,yf,tf,r,N,numTomograms):
+def make_return_3D_path(x0,xf,y0,yf,tf,r,N,numTomograms):
 	f = np.poly1d(poly3(x0,xf,0,tf,r,r))
 	path = f(np.linspace(0,tf,N))
 	path.shape += (1,)
@@ -45,6 +45,15 @@ def make_return_path(x0,xf,y0,yf,tf,r,N,numTomograms):
 	intervals = [[y[i],y[i+1]] for i in range(numTomograms-1)]+[[y[-1]]*2]
 	path_y = np.vstack([np.linspace(i[0],i[1],N) for i in intervals])
 	p = np.dstack((path_x,path_y))
+	return p
+
+def make_return_continuous_path(x0,xf,y0,yf,tf,rx,ry,N):
+	def path(x0,xf,rx):
+		f = np.poly1d(poly3(x0,xf,0,tf,rx,rx))
+		return f(np.linspace(0,tf,N))
+	path_x = path(x0,xf,rx)
+	path_y = path(y0,yf,ry)
+	p = np.vstack((path_x,path_y))
 	return p
 
 def make_position_path(x0,r,t,N):
