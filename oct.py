@@ -15,7 +15,7 @@ def parse():
 		'store',
 		'x',
 		'get-p',
-		'resample',
+		'resample-d',
 		'fft',
 		'non-cor-fft',
 		'line',

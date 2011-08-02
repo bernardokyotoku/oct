@@ -9,11 +9,15 @@ except Exception:
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+import signal
 from configobj import ConfigObj
 from validate import Validator
 from time import sleep
 from multiprocessing import Process, Queue
 from path import *
+from scipy import interpolate
+
+loop = True
 
 def log_type(value):
 	try:
@@ -82,33 +86,37 @@ def prepare_scope(scope_config):
 	scope.ConfigureVertical(**scope_config['VerticalSample'])
 	return scope
 
-def resample(raw_data,config):
-	from scipy import interpolate
-	import matplotlib.pyplot as plt
-	p = [config['p%d'%i] for i in range(8)]
+def resample(raw_data,config,rsp_data=None,axis=0):
+	if rsp_data == None:
+		n = 1024
+		rsp_data = np.zeros((n,raw_data.shape[-1]))
+	else:
+		n = rsp_data.shape[axis]
+	p = [config['resample_poly_coef']['p%d'%i] for i in range(8)]
 	f = np.poly1d(p)
-	old_x = f(np.arange(raw_data.shape[-1]))
-	new_x = np.linspace(0,raw_data.shape[-1],1024)
-	resampled = np.zeros((raw_data.shape[0],1024))
+	old_x = f(np.arange(raw_data.shape[axis]))
+	new_x = np.linspace(0,raw_data.shape[axis],n)
 	if len(raw_data.shape) == 1:
 		tck = interpolate.splrep(old_x,raw_data,s=0)
-		resampled = interpolate.splev(new_x,tck)
+		rsp_data = interpolate.splev(new_x,tck)
 	else:
-		for line in range(raw_data.shape[0]):
-			tck = interpolate.splrep(old_x,raw_data[line])
-			resampled[line] = interpolate.splev(new_x,tck)
-	return resampled
+		for line in range(raw_data.shape[-1]):
+			tck = interpolate.splrep(old_x,raw_data[:,line])
+			rsp_data[:,line] = interpolate.splev(new_x,tck)
+	return rsp_data
 
 def transform(rsp_data):
-	return abs(np.fft.fft(data))
+	return abs(np.fft.fft(rsp_data))
 
 def allocate_memory(config):
 	hor = config['Horizontal']
+	Xp = config['num_long_points']
 	X = hor['numPts']
 	Y = hor['numRecords']
 	Z = config['numTomograms']
 	data = np.zeros([Z,X,Y],order='C',dtype=np.float64)
-	return data
+	data_p= np.zeros([Z,Xp,Y],order='C',dtype=np.float64)
+	return data,data_p
 
 def positioning(daq_task,config):
 	config['daq']['positioning']
@@ -117,7 +125,7 @@ def positioning(daq_task,config):
 def make_line_path(x0,y0,xf,yf,N):
 	X = np.linspace(x0,xf,N)
 	Y = np.linspace(y0,yf,N)
-	return np.vstack((X,Y))
+	return np.vstack((X,Y)).T
 
 def make_setpositionpath():
 	pass
@@ -180,7 +188,7 @@ def scan(config,data):
 
 def scan_3D(config,data):
 	config3D = config["scope3D"]
-	data = allocate_memory(config3D)
+	data,processed_data = allocate_memory(config3D)
 	scope = prepare_scope(config3D)
 	numTomograms = config3D['numTomograms']
 	conf = config['daq']['positioning']
@@ -209,20 +217,43 @@ def scan_3D(config,data):
 
 def scan_continuous(config,data):
 	arg = config['daq']['path'].dict()
-	arg['N'] = config['scope']['Horizontal']['numRecords']
+	config_scope = config['scope_continuous']
+	arg['N'] = config_scope['Horizontal']['numRecords']
 	scan_path = make_line_path(**arg)
-	scope = prepare_scope(config['scope_continuous'])
-	while go:
+	scope = prepare_scope(config_scope)
+	data,processed_data = allocate_memory(config_scope)
+	global loop
+	loop = True
+	def signal_handler(signal, frame):
+		print "interrupt"
+		global loop
+		loop = False
+	signal.signal(signal.SIGINT, signal_handler)
+	i=0
+	from timeit import time
+	b = time.time()
+	while loop:
+		print i
+		i+=1
 		daq = prepare_daq(scan_path,config['daq'],'scanContinuous')
 		scope.InitiateAcquisition()
-		scope.Fetch('0',data)
+		scope.Fetch('0',data[0])
 		del daq
-		return_mirror(config)
-		data = process(data)
-		plt.imshow(data)
-	park(daq)
+		shape = list(data[0].shape)
+		shape.reverse()
+		d = data[0].reshape(shape).T
+		resample(d,config,processed_data[0])
+		processed_data[0] = transform(processed_data[0].T).T
+	print 'took:',(time.time()-b)/i,'in ',i,'laps'
+	return processed_data[0]
 
-def resample(config,data):
+def return_mirror(config):
+	param = config['daq']['path'].dict()
+	param['r']
+	return_path = make_return_path(x0,xf,y0,yf,tf,r,N,numTomograms)
+	daq = prepare_daq(scan_path,config['daq'],'positioning')
+
+def resample_d(config,data):
 	if len(data.shape) == 3:
 		data = data[0,:,:]
 	return resample(data,config['resample_poly_coef'])
@@ -231,7 +262,6 @@ def fft(config,data):
 	data = abs(np.fft.fft(data))
 
 def plot(config,data):
-	import matplotlib.pyplot as plt
 	if len(data.shape) == 3:
 		data = data[0,0,:]
 	if len(data.shape) == 2:
