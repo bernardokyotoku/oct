@@ -74,7 +74,11 @@ def prepare_daq(path,daq_config,mode,auto_start=True):
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
 	daq.configure_timing_sample_clock(**daq_config[mode])
-	daq.write(signal,auto_start=auto_start)
+	#array ordering is really annoying me, need to fix this
+	shape = list(signal.shape)
+	shape.reverse()
+	signal = signal.reshape(shape)
+	daq.write(signal.T,auto_start=auto_start)
 	return daq
 
 def prepare_scope(scope_config):
@@ -220,6 +224,7 @@ def scan_continuous(config,data):
 	config_scope = config['scope_continuous']
 	arg['N'] = config_scope['Horizontal']['numRecords']
 	scan_path = make_line_path(**arg)
+	#import pdb;pdb.set_trace()
 	scope = prepare_scope(config_scope)
 	data,processed_data = allocate_memory(config_scope)
 	global loop
@@ -232,6 +237,9 @@ def scan_continuous(config,data):
 	i=0
 	from timeit import time
 	b = time.time()
+	plt.ion()
+	plt.figure()
+	plt.show()
 	while loop:
 		print i
 		i+=1
@@ -245,14 +253,17 @@ def scan_continuous(config,data):
 		d = data[0].reshape(shape).T
 		resample(d,config,processed_data[0])
 		processed_data[0] = transform(processed_data[0].T).T
+		plt.imshow(processed_data[0,512:])
+		plt.draw()
 	print 'took:',(time.time()-b)/i,'in ',i,'laps'
 	return processed_data[0]
 
 def return_mirror(config):
 	param = config['daq']['path'].dict()
-	param['N'] = config['scope_continuous']['Horizontal']['numRecords']
+	param['N'] = config['daq']['positioning']['samples_per_channel']
+	numRecords = config['scope_continuous']['Horizontal']['numRecords']
 	laser_frequency = config['laser']['frequency']
-	param['tf'] = param['N']/laser_frequency
+	param['tf'] = numRecords/laser_frequency
 	param['rx'] = (param['xf']-param['x0'])/param['tf']
 	param['ry'] = (param['yf']-param['y0'])/param['tf']
 	return_path = make_return_continuous_path(**param).T

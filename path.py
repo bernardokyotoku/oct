@@ -48,6 +48,8 @@ def make_return_3D_path(x0,xf,y0,yf,tf,r,N,numTomograms):
 	return p
 
 def make_return_continuous_path(x0,xf,y0,yf,tf,rx,ry,N):
+	x0,xf = xf,x0
+	y0,yf = yf,y0
 	def path(x0,xf,rx):
 		f = np.poly1d(poly3(x0,xf,0,tf,rx,rx))
 		return f(np.linspace(0,tf,N))
