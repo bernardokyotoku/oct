@@ -11,7 +11,7 @@ def parse():
 	flags = [
 		'horz-cal',
 		'plot',
-		'img-plot',
+		'zimg-plot',
 		'store',
 		'x',
 		'get-p',

@@ -10,12 +10,14 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import signal
+import subprocess
 from configobj import ConfigObj
 from validate import Validator
 from time import sleep
 from multiprocessing import Process, Queue
 from path import *
 from scipy import interpolate
+from PIL import Image
 
 loop = True
 
@@ -118,8 +120,8 @@ def allocate_memory(config):
 	X = hor['numPts']
 	Y = hor['numRecords']
 	Z = config['numTomograms']
-	data = np.zeros([Z,X,Y],order='C',dtype=np.float64)
-	data_p= np.zeros([Z,Xp,Y],order='C',dtype=np.float64)
+	data = [np.zeros([X,Y],order='F',dtype=np.int32) for i in range(Z)]
+	data_p= [np.zeros([Xp,Y],order='F',dtype=np.int32) for i in range(Z)]
 	return data,data_p
 
 def positioning(daq_task,config):
@@ -214,9 +216,9 @@ def scan_3D(config,data):
 		daq = prepare_daq(return_path[i],config['daq'],"positioning",auto_start=True)
 		daq.wait_until_done()
 		del daq
-	# numpy arrays and niscope arrays have weird order, code below fix it
-	new_shape = [data.shape[i] for i in [0,2,1]]
-	data = data.reshape(new_shape)
+	#numpy arrays and niscope arrays have weird order, code below fix it
+	#new_shape = [data.shape[i] for i in [0,2,1]]
+	#data = data.reshape(new_shape)
 	return data
 
 def scan_continuous(config,data):
@@ -240,6 +242,7 @@ def scan_continuous(config,data):
 	plt.ion()
 	plt.figure()
 	plt.show()
+	#f = open('fifo','w')
 	while loop:
 		print i
 		i+=1
@@ -248,13 +251,22 @@ def scan_continuous(config,data):
 		scope.Fetch('0',data[0])
 		del daq
 		return_mirror(config)
-		shape = list(data[0].shape)
-		shape.reverse()
-		d = data[0].reshape(shape).T
+	#	shape = list(data[0].shape)
+	#	shape.reverse()
+	#	d = data[0].reshape(shape).T
+		d = data[0]
 		resample(d,config,processed_data[0])
 		processed_data[0] = transform(processed_data[0].T).T
-		plt.imshow(processed_data[0,512:])
+		img = processed_data[0] 
+	#	img = np.float32(img)/img.max()
+	#	img = np.uint8(127*(img+1))
+	#	print img.shape
+		plt.imshow(img[512:])
 		plt.draw()
+	#	im = Image.fromarray(img[512:])
+		#f.write(im.tostring('jpeg','L'))
+		
+	#f.close()
 	print 'took:',(time.time()-b)/i,'in ',i,'laps'
 	return processed_data[0]
 
@@ -272,8 +284,8 @@ def return_mirror(config):
 	del daq
 
 def resample_d(config,data):
-	if len(data.shape) == 3:
-		data = data[0,:,:]
+	if type(data) == list:
+		data = data[0]
 	return resample(data,config['resample_poly_coef'])
 
 def fft(config,data):
@@ -290,8 +302,8 @@ def plot(config,data):
 	plt.plot(data)
 	plt.show()
 
-def img_plot(config,data):
-	if len(data.shape) == 3:
+def zimg_plot(config,data):
+	if type(data)== list:
 		data = data[0]
 	if len(data.shape) == 2:
 		data = data
