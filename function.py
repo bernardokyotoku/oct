@@ -120,7 +120,7 @@ def resample(raw_data,config,rsp_data=None,axis=0):
 def transform(rsp_data):
 	return abs(np.fft.fft(rsp_data))
 
-def allocate_memory(config):
+def allocate_memory(config,type):
 	hor = config['Horizontal']
 	Xp = config['num_long_points']
 	X = hor['numPts']
@@ -128,7 +128,38 @@ def allocate_memory(config):
 	Z = config['numTomograms']
 	data = [np.zeros([X,Y],order='F',dtype=np.int32) for i in range(Z)]
 	data_p= [np.zeros([Xp,Y],order='F',dtype=np.int32) for i in range(Z)]
-	return data,data_p
+	class Memory:
+		def __init__(self,data,data_p,type):
+			self.i = 0 
+			self.data = data
+			self.data_p = data_p
+			self.type = type
+			self.next = {
+				'single':self.next_single,
+				'continuous':self.next_continuous,
+				'3D':self.next_3D,
+					}[self.type]
+
+		def next_p(self):
+			return self.data_p[i]
+
+		def next_continuous(self):
+			self.i += 1	
+			if self.i >= len(self.data):
+				self.i = 1
+			return self.data[self.i - 1]
+
+		def next_3D(self):
+			self.i += 1	
+			return self.data[self.i-1]
+
+		def next_single(self):
+			return self.data,self.data_p
+
+		def all(self):
+			return self.data
+	return Memory(data,data_p,type)
+	#return data,data_p
 
 def positioning(daq_task,config):
 	config['daq']['positioning']
@@ -199,11 +230,9 @@ def scan(config,data):
 	abs_data = abs(fft_data)
 
 
-
-
 def scan_3D(config,data):
 	config3D = config["scope3D"]
-	data,processed_data = allocate_memory(config3D)
+	memory = allocate_memory(config3D,'3D')
 	scope = prepare_scope(config3D)
 	numTomograms = config3D['numTomograms']
 	conf = config['daq']['positioning']
@@ -217,7 +246,7 @@ def scan_3D(config,data):
 	return_path = make_return_3D_path(x0,xf,y0,yf,tf,r,N,numTomograms)
 	scan_path = make_scan_path(x0,xf,y0,yf,numRec,numTomograms)
 	for i in range(numTomograms):
-		tomogram = data[i]
+		tomogram = memory.next()
 		daq = prepare_daq(scan_path[i],config['daq'],"scan3D")
 		scope.InitiateAcquisition()
 		scope.Fetch(config3D['VerticalSample']['channelList'],tomogram)
@@ -225,7 +254,7 @@ def scan_3D(config,data):
 		daq = prepare_daq(return_path[i],config['daq'],"positioning",auto_start=True)
 		daq.wait_until_done()
 		del daq
-	return data
+	return memory.all()
 
 def scan_continuous(config,data):
 	arg = config['daq']['path'].dict()
@@ -234,7 +263,7 @@ def scan_continuous(config,data):
 	scan_path = make_line_path(**arg)
 	#import pdb;pdb.set_trace()
 	scope = prepare_scope(config_scope)
-	data,processed_data = allocate_memory(config_scope)
+	memory = allocate_memory(config_scope,'continuous')
 	global interrupted
 	interrupted = False
 	i=0
@@ -249,13 +278,14 @@ def scan_continuous(config,data):
 		i+=1
 		daq = prepare_daq(scan_path,config['daq'],'scanContinuous')
 		scope.InitiateAcquisition()
-		scope.Fetch('0',data[0])
+		data = memory.next()
+		scope.Fetch('0',data)
 		del daq
 		return_mirror(config)
-		d = data[0]
-		resample(d,config,processed_data[0])
-		processed_data[0] = transform(processed_data[0].T).T
-		img = processed_data[0] 
+		processed_data = memory.next_p()
+		resample(data,config,processed_data)
+		processed_data = transform(processed_data.T).T
+		img = processed_data 
 		plt.imshow(img[512:])
 		plt.draw()
 		
