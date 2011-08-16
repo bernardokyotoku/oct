@@ -168,24 +168,30 @@ def get_p(config,data):
 	config.write()	
 	return data
 
-def scan(config,data):
-	image_config = config['image']
-	lineDensity = image_config['density']
-	length = image_config['length']
-	X = single_scan_path(-length/2,length/2,50,lineDensity)
-	path = np.vstack([X,np.zeros(X.shape)]).T
-	daq = prepare_daq(path,config['daq'],"positioning")
-	scope = prepare_scope(scope_config)
-	scope.NumRecords = path.shape[1]
-	raw_data = scan(scope,daq)
-	rsp_data = resample(raw_data)
-	fft_data = transform(rsp_data)
-	abs_data = abs(fft_data)
+def scan(config,data,kind):
+	config_scope = config[kind]
+	arg = config['scan_region'].dict()
+	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
+	memory = allocate_memory(config_scope,kind)
+	scope = prepare_scope(config_scope)
+	numTomograms = config_scope['numTomograms']
+	numRecords = config_scope['Horizontal']['numRecords']
+	path = Path((x0,y0),(xf,yf),[numTomograms,numRecords])
+	global interrupted
+	interrupted = False
+	while path.has_next() and not interrupted:
+		tomogram = memory.next()
+		daq = prepare_daq(path.next(),config['daq'],kind)
+		scope.InitiateAcquisition()
+		scope.Fetch(config_scope['VerticalSample']['channelList'],tomogram)
+		del daq
+		move_daq(path.next_return(),config['daq'])
+	return memory.all()
 
 
 def scan_3D(config,data):
 	config_scope = config["scope3D"]
-	arg = config['daq']['path'].dict()
+	arg = config['scan_region'].dict()
 	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
 	memory = allocate_memory(config_scope,'3D')
 	scope = prepare_scope(config_scope)
@@ -205,7 +211,7 @@ def scan_3D(config,data):
 
 def scan_continuous(config,data):
 	config_scope = config['scope_continuous']
-	arg = config['daq']['path'].dict()
+	arg = config['scan_region'].dict()
 	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
 	numRecords = config_scope['Horizontal']['numRecords']
 	path = Path((x0,y0),(xf,yf),numRecords)

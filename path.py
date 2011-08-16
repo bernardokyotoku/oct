@@ -85,27 +85,35 @@ def single_scan_path(X0,Xf,t,lineDensity):
 	return np.hstack([start,scan[0:-1],park])
 
 class Path:
-	def __init__(self,P0,Pf,N):
-		self.P0,self.Pf = P0,Pf
-		if type(N) == list:
-			self.numTomograms = N[0]
-			self.numRecords = N[1]
-			self.i = 0
-			self.scan_path = self.make_scan_3D_path()
-			self.next = self.next_3D
-			self.return_positions = self.make_return_3D_positions()
-			self.next_return = self.next_return_3D
-			self.has_next = self.has_next_3D
-		else:
-			self.numRecords = N
-			self.next = self.next_single
-			self.scan_path = self.make_line_path()
-			self.return_positions = P0
-			self.next_return = self.next_return_single
-			self.has_next = lambda : True
+	def __init__(self,mode,config):
+		for key,value in config[mode].iteritems():
+			setattr(self,key,value)
+		self.i = 0 
+		self.next = {
+			self.next_3D:'area',
+			self.next_single:'single',
+			self.next_single:'continuous',
+				}[mode]
+
+		self.has_next = {
+			self.has_next_3D:'area',
+			lambda : True : 'single',
+			lambda : True : 'continuous',
+				}[mode]
+
+		self.next_return = {
+			self.next_return_3D:'area',
+			self.next_return_single:'single',
+			self.next_return_single:'continuous',
+				}[mode]
+
+		self.scan_path = {
+			self.make_scan_3D_path:'area',
+			self.make_line_path:'single',
+			self.make_line_path:'continuous',
+				}[mode]()
 
 	def has_next_3D(self):
-		print self.i,self.numTomograms
 		return self.i<self.numTomograms
 
 	def next_single(self):
