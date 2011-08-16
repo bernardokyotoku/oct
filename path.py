@@ -78,3 +78,5 @@ def single_scan_path(X0,Xf,t,lineDensity):
 	scan = np.linspace(X0,Xf,num)
 	park = third_order_line(Xf,0,0,t,pitch,0)
 	return np.hstack([start,scan[0:-1],park])
+
+

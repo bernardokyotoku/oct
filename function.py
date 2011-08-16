@@ -19,7 +19,7 @@ from path import *
 from scipy import interpolate
 from PIL import Image
 
-loop = True
+interrupted = False
 
 def log_type(value):
 	try:
@@ -192,6 +192,9 @@ def scan(config,data):
 	fft_data = transform(rsp_data)
 	abs_data = abs(fft_data)
 
+
+
+
 def scan_3D(config,data):
 	config3D = config["scope3D"]
 	data,processed_data = allocate_memory(config3D)
@@ -216,9 +219,6 @@ def scan_3D(config,data):
 		daq = prepare_daq(return_path[i],config['daq'],"positioning",auto_start=True)
 		daq.wait_until_done()
 		del daq
-	#numpy arrays and niscope arrays have weird order, code below fix it
-	#new_shape = [data.shape[i] for i in [0,2,1]]
-	#data = data.reshape(new_shape)
 	return data
 
 def scan_continuous(config,data):
@@ -229,12 +229,12 @@ def scan_continuous(config,data):
 	#import pdb;pdb.set_trace()
 	scope = prepare_scope(config_scope)
 	data,processed_data = allocate_memory(config_scope)
-	global loop
-	loop = True
+	global interrupted
+	interrupted = False
 	def signal_handler(signal, frame):
 		print "interrupt"
-		global loop
-		loop = False
+		global interrupted
+		interrupted = True
 	signal.signal(signal.SIGINT, signal_handler)
 	i=0
 	from timeit import time
@@ -243,7 +243,7 @@ def scan_continuous(config,data):
 	plt.figure()
 	plt.show()
 	#f = open('fifo','w')
-	while loop:
+	while not interrupted:
 		print i
 		i+=1
 		daq = prepare_daq(scan_path,config['daq'],'scanContinuous')
@@ -251,20 +251,12 @@ def scan_continuous(config,data):
 		scope.Fetch('0',data[0])
 		del daq
 		return_mirror(config)
-	#	shape = list(data[0].shape)
-	#	shape.reverse()
-	#	d = data[0].reshape(shape).T
 		d = data[0]
 		resample(d,config,processed_data[0])
 		processed_data[0] = transform(processed_data[0].T).T
 		img = processed_data[0] 
-	#	img = np.float32(img)/img.max()
-	#	img = np.uint8(127*(img+1))
-	#	print img.shape
 		plt.imshow(img[512:])
 		plt.draw()
-	#	im = Image.fromarray(img[512:])
-		#f.write(im.tostring('jpeg','L'))
 		
 	#f.close()
 	print 'took:',(time.time()-b)/i,'in ',i,'laps'
