@@ -34,42 +34,6 @@ def log_type(value):
 		pass
 	return int(value)	
 
-def scan(scope,daq):
-	scope.InitiateAcquisition()
-	daq.start()
-	while scope.AcquisitionStatus() != niScope.NISCOPE_VAL_ACQ_COMPLETE:
-		sleep(0.1)
-	scope.Fetch("",data)
-	return data
-
-def processor(queue):
-	raw_data = queue.get()
-	rsp_data = reample(raw_data)
-
-def param(config):
-	daq = config['daq']
-	path = daq['path']
-	laser_sweep_frequency = config['laser']['frequency']
-	density = config['image']['density']
-	xlength = path['xf']-path['x0']
-	ylength = path['yf']-path['y0']
-	length = np.sqrt(xlength**2+ylength**2)
-	numRecords = density*length
-	config['scope']['Horizontal']['numRecords'] = numRecords
-	scan_time = numRecords/laser_sweep_frequency
-	x_vel = xlength/scan_time
-	y_vel = ylength/scan_time
-	daq_sample_rate = daq['positioning_time']
-	num_points = daq_sample_rate*daq['positioning']['rate']
-	if mode == 'position':
-		return path['x0'],path['y0'],x_vel,y_vel,scan_time,numPoints
-
-def position(config):
-	path = make_2d_position_path(param(config,'position'))
-	daq = prepare_daq(path,daq_config,'positioning')
-	time.wait_until(daq.task_done)
-	del daq
-
 def park(daq):
 	position([0,0],daq)
 
@@ -88,6 +52,17 @@ def prepare_daq(path,daq_config,mode,auto_start=True):
 	signal = signal.reshape(shape)
 	daq.write(signal.T,auto_start=auto_start)
 	return daq
+
+def move_daq(position,daq_config):
+	X_mpV = daq_config['X_mpV']
+	Y_mpV = daq_config['Y_mpV']
+	T = np.array([[X_mpV,Y_mpV]])
+	signal = position*T
+	daq = AnalogOutputTask()
+	daq.create_voltage_channel(**daq_config['X'])
+	daq.create_voltage_channel(**daq_config['Y'])
+	daq.write(signal)
+	del daq
 
 def prepare_scope(scope_config):
 	scope = niScope.Scope(scope_config['dev'])
@@ -159,28 +134,6 @@ def allocate_memory(config,type):
 		def all(self):
 			return self.data
 	return Memory(data,data_p,type)
-	#return data,data_p
-
-def positioning(daq_task,config):
-	config['daq']['positioning']
-	task.configure_timing_sample_clock(source='OnboardClock', rate=1, active_edge='rising', sample_mode='finite', samples_per_channel=1000)
-	
-def make_line_path(x0,y0,xf,yf,N):
-	X = np.linspace(x0,xf,N)
-	Y = np.linspace(y0,yf,N)
-	return np.vstack((X,Y)).T
-
-def make_setpositionpath():
-	pass
-
-def make_resetpositionpath():
-	pass
-
-def make_acquisitionwindowpath():
-	pass
-
-def make_parkpath():
-	pass
 
 def horz_cal(config,data):
 	scope_config = config['scope']
@@ -231,80 +184,52 @@ def scan(config,data):
 
 
 def scan_3D(config,data):
-	config3D = config["scope3D"]
-	memory = allocate_memory(config3D,'3D')
-	scope = prepare_scope(config3D)
-	numTomograms = config3D['numTomograms']
-	conf = config['daq']['positioning']
-	f = config['laser']['frequency']
-	path = config['daq']['path'] 
-	numRec = config3D['Horizontal']['numRecords']
-	tf = float(numRec)/f
-	r = (path['xf']-path['x0'])/tf
-	N = conf['samples_per_channel']
-	x0,xf,y0,yf=path['x0'],path['xf'],path['y0'],path['yf']
-	return_path = make_return_3D_path(x0,xf,y0,yf,tf,r,N,numTomograms)
-	scan_path = make_scan_path(x0,xf,y0,yf,numRec,numTomograms)
-	for i in range(numTomograms):
+	config_scope = config["scope3D"]
+	arg = config['daq']['path'].dict()
+	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
+	memory = allocate_memory(config_scope,'3D')
+	scope = prepare_scope(config_scope)
+	numTomograms = config_scope['numTomograms']
+	numRecords = config_scope['Horizontal']['numRecords']
+	path = Path((x0,y0),(xf,yf),[numTomograms,numRecords])
+	global interrupted
+	interrupted = False
+	while path.has_next() and not interrupted:
 		tomogram = memory.next()
-		daq = prepare_daq(scan_path[i],config['daq'],"scan3D")
+		daq = prepare_daq(path.next(),config['daq'],"scan3D")
 		scope.InitiateAcquisition()
-		scope.Fetch(config3D['VerticalSample']['channelList'],tomogram)
+		scope.Fetch(config_scope['VerticalSample']['channelList'],tomogram)
 		del daq
-		daq = prepare_daq(return_path[i],config['daq'],"positioning",auto_start=True)
-		daq.wait_until_done()
-		del daq
+		move_daq(path.next_return(),config['daq'])
 	return memory.all()
 
 def scan_continuous(config,data):
-	arg = config['daq']['path'].dict()
 	config_scope = config['scope_continuous']
-	arg['N'] = config_scope['Horizontal']['numRecords']
-	scan_path = make_line_path(**arg)
-	#import pdb;pdb.set_trace()
+	arg = config['daq']['path'].dict()
+	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
+	numRecords = config_scope['Horizontal']['numRecords']
+	path = Path((x0,y0),(xf,yf),numRecords)
 	scope = prepare_scope(config_scope)
 	memory = allocate_memory(config_scope,'continuous')
 	global interrupted
 	interrupted = False
-	i=0
-	from timeit import time
-	b = time.time()
 	plt.ion()
 	plt.figure()
 	plt.show()
-	#f = open('fifo','w')
-	while not interrupted:
-		print i
-		i+=1
-		daq = prepare_daq(scan_path,config['daq'],'scanContinuous')
+	while path.has_next() and not interrupted:
+		daq = prepare_daq(path.next(),config['daq'],'scanContinuous')
 		scope.InitiateAcquisition()
 		data = memory.next()
 		scope.Fetch('0',data)
 		del daq
-		return_mirror(config)
+		move_daq(path.next_return(),config['daq'])
 		processed_data = memory.next_p()
 		resample(data,config,processed_data)
 		processed_data = transform(processed_data.T).T
 		img = processed_data 
 		plt.imshow(img[512:])
 		plt.draw()
-		
-	#f.close()
-	print 'took:',(time.time()-b)/i,'in ',i,'laps'
-	return processed_data[0]
-
-def return_mirror(config):
-	param = config['daq']['path'].dict()
-	param['N'] = config['daq']['positioning']['samples_per_channel']
-	numRecords = config['scope_continuous']['Horizontal']['numRecords']
-	laser_frequency = config['laser']['frequency']
-	param['tf'] = numRecords/laser_frequency
-	param['rx'] = (param['xf']-param['x0'])/param['tf']
-	param['ry'] = (param['yf']-param['y0'])/param['tf']
-	return_path = make_return_continuous_path(**param).T
-	daq = prepare_daq(return_path,config['daq'],'positioning')
-	daq.wait_until_done()
-	del daq
+	return memory.all()
 
 def resample_d(config,data):
 	if type(data) == list:
