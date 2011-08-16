@@ -21,6 +21,12 @@ from PIL import Image
 
 interrupted = False
 
+def signal_handler(signal, frame):
+	print "interrupt"
+	global interrupted
+	interrupted = True
+signal.signal(signal.SIGINT, signal_handler)
+
 def log_type(value):
 	try:
 		return getattr(logging,value)
@@ -231,11 +237,6 @@ def scan_continuous(config,data):
 	data,processed_data = allocate_memory(config_scope)
 	global interrupted
 	interrupted = False
-	def signal_handler(signal, frame):
-		print "interrupt"
-		global interrupted
-		interrupted = True
-	signal.signal(signal.SIGINT, signal_handler)
 	i=0
 	from timeit import time
 	b = time.time()
