@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import signal
 import subprocess
+import sys
 from configobj import ConfigObj
 from validate import Validator
 from time import sleep
@@ -53,11 +54,7 @@ def prepare_daq(path,daq_config,mode,auto_start=True):
 	daq.write(signal.T,auto_start=auto_start)
 	return daq
 
-def move_daq(position,daq_config):
-	X_mpV = daq_config['X_mpV']
-	Y_mpV = daq_config['Y_mpV']
-	T = np.array([[X_mpV,Y_mpV]])
-	signal = position*T
+def move_daq(signal,daq_config):
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
@@ -95,45 +92,6 @@ def resample(raw_data,config,rsp_data=None,axis=0):
 def transform(rsp_data):
 	return abs(np.fft.fft(rsp_data))
 
-def allocate_memory(config,type):
-	hor = config['Horizontal']
-	Xp = config['num_long_points']
-	X = hor['numPts']
-	Y = hor['numRecords']
-	Z = config['numTomograms']
-	data = [np.zeros([X,Y],order='F',dtype=np.int32) for i in range(Z)]
-	data_p= [np.zeros([Xp,Y],order='F',dtype=np.int32) for i in range(Z)]
-	class Memory:
-		def __init__(self,data,data_p,type):
-			self.i = 0 
-			self.data = data
-			self.data_p = data_p
-			self.type = type
-			self.next = {
-				'single':self.next_single,
-				'continuous':self.next_continuous,
-				'3D':self.next_3D,
-					}[self.type]
-
-		def next_p(self):
-			return self.data_p[i]
-
-		def next_continuous(self):
-			self.i += 1	
-			if self.i >= len(self.data):
-				self.i = 1
-			return self.data[self.i - 1]
-
-		def next_3D(self):
-			self.i += 1	
-			return self.data[self.i-1]
-
-		def next_single(self):
-			return self.data,self.data_p
-
-		def all(self):
-			return self.data
-	return Memory(data,data_p,type)
 
 def horz_cal(config,data):
 	scope_config = config['scope']
@@ -168,28 +126,109 @@ def get_p(config,data):
 	config.write()	
 	return data
 
-def scan(config,data,kind):
-	config_scope = config[kind]
-	arg = config['scan_region'].dict()
-	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
-	memory = allocate_memory(config_scope,kind)
-	scope = prepare_scope(config_scope)
-	numTomograms = config_scope['numTomograms']
-	numRecords = config_scope['Horizontal']['numRecords']
-	path = Path((x0,y0),(xf,yf),[numTomograms,numRecords])
-	global interrupted
-	interrupted = False
-	while path.has_next() and not interrupted:
-		tomogram = memory.next()
-		daq = prepare_daq(path.next(),config['daq'],kind)
-		scope.InitiateAcquisition()
-		scope.Fetch(config_scope['VerticalSample']['channelList'],tomogram)
-		del daq
-		move_daq(path.next_return(),config['daq'])
-	return memory.all()
+def convert_path_to_voltage(path,path_to_voltage_constants):
+	X_mpV = path_to_voltage_constants['X_mpV']
+	Y_mpV = path_to_voltage_constants['Y_mpV']
+	T = np.array([[X_mpV,Y_mpV]])
+	return path*T
 
+def configure_daq(mode,daq_config):
+	daq = AnalogOutputTask()
+	daq.create_voltage_channel(**daq_config['X'])
+	daq.create_voltage_channel(**daq_config['Y'])
+	daq.configure_timing_sample_clock(**daq_config[mode])
+	return daq
+
+def adjust_scope_config_to_scan(mode,config):
+	numRecords = config[mode]['numRecords']
+	numPts = config[mode]['numPts']
+	config['scope']['Horizontal']['numRecords'] = numRecords
+	config['scope']['Horizontal']['numPts'] = numPts
+
+def configure_scope(mode,config):
+	def fetch(self,memory):
+		ch = config['VerticalSample']['channelList']
+		self.Fetch(ch,memory)
+	niScope.Scope.fetch_sample_signal = fetch
+	scope = niScope.Scope(config['dev'])
+	scope.ConfigureHorizontalTiming(**config['Horizontal'])
+	scope.ExportSignal(**config['ExportSignal'])
+	scope.ConfigureTrigger(**config['Trigger'])
+	scope.ConfigureVertical(**config['VerticalRef'])
+	scope.ConfigureVertical(**config['VerticalSample'])
+	return scope
+
+def allocate_memory(mode,config):
+	Xp = config[mode]['numLongPts']
+	X = config[mode]['numPts']
+	Y = config[mode]['numRecords']
+	Z = config[mode]['numTomograms']
+	data = 	[np.zeros([X ,Y],order='F',dtype=np.int32) for i in range(Z)]
+	data_p= [np.zeros([Xp,Y],order='F',dtype=np.int32) for i in range(Z)]
+	class Memory:
+		def __init__(self,data,data_p,mode):
+			self.i = 0 
+			self.data = data
+			self.data_p = data_p
+			self.mode = mode
+			self.next = {
+				'single':self.next_single,
+				'continuous':self.next_continuous,
+				'3D':self.next_3D,
+					}[self.mode]
+
+		def next_p(self):
+			return self.data_p[i]
+
+		def next_continuous(self):
+			self.i += 1	
+			if self.i >= len(self.data):
+				self.i = 1
+			return self.data[self.i - 1]
+
+		def next_3D(self):
+			self.i += 1	
+			return self.data[self.i-1]
+
+		def next_single(self):
+			return self.data,self.data_p
+
+		def all(self):
+			return self.data
+	return Memory(data,data_p,mode)
+
+def scan_continuous(config,data):
+	scan(config,data,'continuous')
 
 def scan_3D(config,data):
+	scan(config,data,'3D')
+
+def scan(config,data,mode):
+	adjust_scope_config_to_scan(mode,config)
+	memory = allocate_memory(mode,config)
+	scope = configure_scope(mode,config['scope'])
+	path = Path(mode,config)
+
+	global interrupted
+	interrupted = False
+	filename = 'fifo'
+	fd = open(filename,'w',0)
+	while path.has_next() and not interrupted:
+		tomogram = memory.next()
+		signal = convert_path_to_voltage(path.next(),config['path_to_voltage'])
+		daq = configure_daq(mode,config['daq'])
+		#need to test if array ordering is ok
+		daq.write(signal)
+		scope.InitiateAcquisition()
+		scope.fetch_sample_signal(tomogram)
+		fd.write(tomogram.data)
+		del daq
+		signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
+		move_daq(signal,config['daq'])
+	move_daq([0,0],config['daq'])
+	fd.close()
+
+def scan_3Dold(config,data):
 	config_scope = config["scope3D"]
 	arg = config['scan_region'].dict()
 	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
@@ -209,7 +248,7 @@ def scan_3D(config,data):
 		move_daq(path.next_return(),config['daq'])
 	return memory.all()
 
-def scan_continuous(config,data):
+def scan_continuousold(config,data):
 	config_scope = config['scope_continuous']
 	arg = config['scan_region'].dict()
 	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']

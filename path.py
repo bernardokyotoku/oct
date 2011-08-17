@@ -123,6 +123,12 @@ class Path:
 			'continuous':self.make_line_path,
 				}[mode]()
 
+		self.return_positions = {
+			'3D':self.make_return_3D_positions,
+			'single':lambda : self.scan_path[0],
+			'continuous':lambda : self.scan_path[0],
+				}[mode]()
+
 	def has_next_3D(self):
 		return self.i<self.numTomograms
 
@@ -161,5 +167,7 @@ class Path:
 
 		X = np.linspace(x0,xf,N)
 		Y = np.linspace(y0,yf,N)
-		return np.vstack((X,Y)).T
+		path = np.vstack((X,Y)).T
+		#this should take care of the memory arrangement
+		return np.ascontiguousarray(path)
 

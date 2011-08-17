@@ -32,7 +32,9 @@ arg = parse()
 args = filter(lambda element: not element.startswith('_'),dir(arg))
 validator = Validator({'log':function.log_type,'float':float})
 config = ConfigObj('config.ini',configspec='configspec.ini')
-if not config.validate(validator):
+a = config.validate(validator)
+print a
+if not a:
 	raise Exception('config.ini does not validate with configspec.ini.')
 logging.basicConfig(filename='oct.log',level=config['log'])
 

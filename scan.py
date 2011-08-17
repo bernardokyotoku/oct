@@ -81,7 +81,7 @@ def scan(config,data,mode):
 
 	global interrupted
 	interrupted = False
-
+	fd = open(filename,'w',0)
 	while path.has_next() and not interrupted:
 		tomogram = memory.next()
 		signal = convert_path_to_voltage(path.next(),config['path_to_voltage'])
@@ -90,5 +90,7 @@ def scan(config,data,mode):
 		daq.write(signal)
 		scope.InitiateAcquisition()
 		scope.fetch_sample_signal(tomogram)
+		sys.stdout.write(tomogram.data)
 		del daq
 		move_daq(path.next_return(),config['daq'])
+	fd.close()
