@@ -206,6 +206,8 @@ def scan_3D(config,data):
 def scan(config,data,mode):
 	adjust_scope_config_to_scan(mode,config)
 	memory = allocate_memory(mode,config)
+	import serial
+	ser = serial.Serial('/dev/ttyUSB0',baudrate=115200);ser.write('oct=1\rscan=1\r');ser.close()
 	scope = configure_scope(mode,config['scope'])
 	path = Path(mode,config)
 
@@ -226,6 +228,7 @@ def scan(config,data,mode):
 		signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
 		move_daq(signal,config['daq'])
 	move_daq([0,0],config['daq'])
+	ser = serial.Serial('/dev/ttyUSB0',baudrate=115200);ser.write('oct=0\rscan=0\r');ser.close()
 	fd.close()
 
 def scan_3Dold(config,data):
