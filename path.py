@@ -84,33 +84,49 @@ def single_scan_path(X0,Xf,t,lineDensity):
 	park = third_order_line(Xf,0,0,t,pitch,0)
 	return np.hstack([start,scan[0:-1],park])
 
+def make_scan_3D_path(x0,y0,xf,yf,numTomograms,numRecords):
+	x = np.linspace(x0,xf,numRecords)
+	x.shape = (1,) + x.shape
+	X = x*np.ones((numTomograms,1))
+	y = np.linspace(y0,yf,numTomograms)
+	y.shape = y.shape + (1,)
+	Y = y*np.ones(numRecords)
+	scan_path = np.dstack([X,Y])
+	return scan_path
+
 class Path:
 	def __init__(self,mode,config):
 		for key,value in config[mode].iteritems():
 			setattr(self,key,value)
 		self.i = 0 
 		self.next = {
-			self.next_3D:'area',
-			self.next_single:'single',
-			self.next_single:'continuous',
+			'3D':self.next_3D,
+			'single':self.next_single,
+			'continuous':self.next_single,
 				}[mode]
 
 		self.has_next = {
-			self.has_next_3D:'area',
-			lambda : True : 'single',
-			lambda : True : 'continuous',
+			'3D':self.has_next_3D,
+			'single' : lambda : True ,
+			'continuous' : lambda : True,
 				}[mode]
 
 		self.next_return = {
-			self.next_return_3D:'area',
-			self.next_return_single:'single',
-			self.next_return_single:'continuous',
+			'3D':self.next_return_3D,
+			'single':self.next_return_single,
+			'continuous':self.next_return_single,
 				}[mode]
 
 		self.scan_path = {
-			self.make_scan_3D_path:'area',
-			self.make_line_path:'single',
-			self.make_line_path:'continuous',
+			'3D':self.make_scan_3D_path,
+			'single':self.make_line_path,
+			'continuous':self.make_line_path,
+				}[mode]()
+
+		self.return_positions = {
+			'3D':self.make_return_3D_positions,
+			'single':lambda : self.scan_path[0],
+			'continuous':lambda : self.scan_path[0],
 				}[mode]()
 
 	def has_next_3D(self):
@@ -130,18 +146,13 @@ class Path:
 		return self.return_positions[self.i-1]
 
 	def make_scan_3D_path(self):
-		x0,y0 = self.P0[0],self.P0[1]
-		xf,yf = self.Pf[0],self.Pf[1]
+		x0,y0 = self.x0,self.y0
+		xf,yf = self.xf,self.yf
 		numTomograms = self.numTomograms
 		numRecords = self.numRecords
-		x = np.linspace(x0,xf,numRecords)
-		x.shape = (1,) + x.shape
-		X = x*np.ones((numTomograms,1))
-		y = np.linspace(y0,yf,numTomograms)
-		y.shape = y.shape + (1,)
-		Y = y*np.ones(numRecords)
-		scan_path = np.dstack([X,Y])
-		return scan_path
+		path = make_scan_3D_path(x0,y0,xf,y0,numTomograms,numRecords)
+		#this should take care of the memory arrangement
+		return np.ascontiguousarray(path)
 	
 	def make_return_3D_positions(self):
 		positions = self.scan_path[:,0]
@@ -150,10 +161,13 @@ class Path:
 		return positions
 
 	def make_line_path(self):
-		x0,y0 = self.P0[0],self.P0[1]
-		xf,yf = self.Pf[0],self.Pf[1]
+		x0,y0 = self.x0,self.y0
+		xf,yf = self.xf,self.yf
 		N = self.numRecords
+
 		X = np.linspace(x0,xf,N)
 		Y = np.linspace(y0,yf,N)
-		return np.vstack((X,Y)).T
+		path = np.vstack((X,Y)).T
+		#this should take care of the memory arrangement
+		return np.ascontiguousarray(path)
 
