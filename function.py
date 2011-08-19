@@ -211,8 +211,7 @@ def scan(config,data,mode):
 
 	global interrupted
 	interrupted = False
-	filename = 'fifo'
-	fd = open(filename,'w',0)
+	fd = open(config['filename'],'w',0)
 	while path.has_next() and not interrupted:
 		tomogram = memory.next()
 		signal = convert_path_to_voltage(path.next(),config['path_to_voltage'])

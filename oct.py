@@ -25,6 +25,7 @@ def parse():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.description = "OCT client."
+	parser.add_argument('-o',dest='filename')
 	for flag in flags:
 		parser.add_argument('--' + flag,action='store_true') 
 	return parser.parse_args()
@@ -39,9 +40,11 @@ if not a:
 logging.basicConfig(filename='oct.log',level=config['log'])
 
 data = []
+if arg.filename:
+	config['filename']=filename if arg.filename else data.dat
+	
 for i in flags:
 	if getattr(arg,i.replace('-','_')):
-		print i
 		fun = getattr(function,i)
 		data = fun(config,data)	
 
