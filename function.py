@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import signal
 import subprocess
 import sys
+import cPickle
 from configobj import ConfigObj
 from validate import Validator
 from time import sleep
@@ -38,37 +39,12 @@ def log_type(value):
 def park(daq):
 	position([0,0],daq)
 
-def prepare_daq(path,daq_config,mode,auto_start=True):
-	X_mpV = daq_config['X_mpV']
-	Y_mpV = daq_config['Y_mpV']
-	T = np.array([[X_mpV,Y_mpV]])
-	signal = path*T
-	daq = AnalogOutputTask()
-	daq.create_voltage_channel(**daq_config['X'])
-	daq.create_voltage_channel(**daq_config['Y'])
-	daq.configure_timing_sample_clock(**daq_config[mode])
-	#array ordering is really annoying me, need to fix this
-	shape = list(signal.shape)
-	shape.reverse()
-	signal = signal.reshape(shape)
-	daq.write(signal.T,auto_start=auto_start)
-	return daq
-
 def move_daq(signal,daq_config):
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
 	daq.write(signal)
 	del daq
-
-def prepare_scope(scope_config):
-	scope = niScope.Scope(scope_config['dev'])
-	scope.ConfigureHorizontalTiming(**scope_config['Horizontal'])
-	scope.ExportSignal(**scope_config['ExportSignal'])
-	scope.ConfigureTrigger(**scope_config['Trigger'])
-	scope.ConfigureVertical(**scope_config['VerticalRef'])
-	scope.ConfigureVertical(**scope_config['VerticalSample'])
-	return scope
 
 def resample(raw_data,config,rsp_data=None,axis=0):
 	if rsp_data == None:
@@ -220,60 +196,13 @@ def scan(config,data,mode):
 		daq.write(signal)
 		scope.InitiateAcquisition()
 		scope.fetch_sample_signal(tomogram)
-		fd.write(tomogram.data)
+		cPickle.dumps(tomogram,fd)
 		del daq
 		signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
 		move_daq(signal,config['daq'])
 	move_daq([0,0],config['daq'])
 	fd.close()
 
-def scan_3Dold(config,data):
-	config_scope = config["scope3D"]
-	arg = config['scan_region'].dict()
-	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
-	memory = allocate_memory(config_scope,'3D')
-	scope = prepare_scope(config_scope)
-	numTomograms = config_scope['numTomograms']
-	numRecords = config_scope['Horizontal']['numRecords']
-	path = Path((x0,y0),(xf,yf),[numTomograms,numRecords])
-	global interrupted
-	interrupted = False
-	while path.has_next() and not interrupted:
-		tomogram = memory.next()
-		daq = prepare_daq(path.next(),config['daq'],"scan3D")
-		scope.InitiateAcquisition()
-		scope.Fetch(config_scope['VerticalSample']['channelList'],tomogram)
-		del daq
-		move_daq(path.next_return(),config['daq'])
-	return memory.all()
-
-def scan_continuousold(config,data):
-	config_scope = config['scope_continuous']
-	arg = config['scan_region'].dict()
-	x0,y0,xf,yf = arg['x0'],arg['y0'],arg['xf'],arg['yf']
-	numRecords = config_scope['Horizontal']['numRecords']
-	path = Path((x0,y0),(xf,yf),numRecords)
-	scope = prepare_scope(config_scope)
-	memory = allocate_memory(config_scope,'continuous')
-	global interrupted
-	interrupted = False
-	plt.ion()
-	plt.figure()
-	plt.show()
-	while path.has_next() and not interrupted:
-		daq = prepare_daq(path.next(),config['daq'],'scanContinuous')
-		scope.InitiateAcquisition()
-		data = memory.next()
-		scope.Fetch('0',data)
-		del daq
-		move_daq(path.next_return(),config['daq'])
-		processed_data = memory.next_p()
-		resample(data,config,processed_data)
-		processed_data = transform(processed_data.T).T
-		img = processed_data 
-		plt.imshow(img[512:])
-		plt.draw()
-	return memory.all()
 
 def resample_d(config,data):
 	if type(data) == list:
