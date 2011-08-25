@@ -1,0 +1,5 @@
+for ubuntu:
+sudo apt-get install python-imaging-tk
+
+for SUSE
+install gstreamer-ugly
