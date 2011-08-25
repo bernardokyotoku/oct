@@ -196,7 +196,7 @@ def scan(config,data,mode):
 		daq.write(signal)
 		scope.InitiateAcquisition()
 		scope.fetch_sample_signal(tomogram)
-		cPickle.dumps(tomogram,fd)
+		cPickle.dumps(tomogram,fd,cPickle.HIGHEST_PROTOCOL)
 		del daq
 		signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
 		move_daq(signal,config['daq'])

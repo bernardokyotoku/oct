@@ -1,0 +1,22 @@
+<html>
+	<head>
+	  <script language="javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+       <script language="javascript" src="http://revolunet.github.com/VLCcontrols/src/jquery-vlc.js"></script>
+	    <link rel="stylesheet" type="text/css" href="http://revolunet.github.com/VLCcontrols/src/styles.css" />
+
+		<script language="javascript">
+		$(document).ready(function() {
+		         var player = VLCobject.embedPlayer('vlc1', 400, 300);
+			  player.play('test.avi');
+				       });
+		  </script>
+	</head>
+	<body>
+		<embed type="application/x-vlc-plugin" 
+		name="player"
+		pluginspage="http://www.videolan.org" 
+		version="VideoLAN.VLCPlugin.2"  
+		target="fifo"></embed>
+	</body>
+</html>
+

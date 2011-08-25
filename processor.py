@@ -2,9 +2,10 @@ import numpy as np
 import logging
 import sys
 import cPickle
+import Image
 from configobj import ConfigObj
 from validate import Validator
-from function import resample, transform, renormalize
+from function import transform,log_type
 
 flags = [
 	'calibrate-spectrum',
@@ -34,7 +35,7 @@ def parse():
 	return parser.parse_args()
 
 arg = parse()
-validator = Validator({'log':function.log_type,'float':float})
+validator = Validator({'log':log_type,'float':float})
 config = ConfigObj('config.ini',configspec='configspec.ini')
 if not config.validate(validator):
 	raise Exception('config.ini does not validate with configspec.ini.')
@@ -45,15 +46,23 @@ for i in flags:
 		fun = getattr(function,i)
 		data = fun(config,data)	
 
-fifo = open(arg.input_filename)
-out = open(arg.output_filename,'w',0)
-
-while not finished:
-	data = cPickle.load(fifo)
-	data = resample(data)
-	data = transform(data)
-	data = abs(data)
-	data = renormalize(data)
-	out.write(data)
-fifo.close()
-out.close()
+in_fd = open(arg.input_filename)
+out_fd = open(arg.output_filename,'w',0)
+import matplotlib.pyplot as plt
+i=0
+raw_input()
+for i in range(19):
+	print i
+	#info = cPickle.load(in_fd)
+	data = cPickle.load(in_fd)
+	#data = np.ndarray(**info)
+	#data = resample(data)
+	print 'x'
+	data2 = transform(data)
+	print 'y'
+	data3 = np.uint8(data2)
+	image = Image.frombuffer("L",data.shape,data=data3.data)
+	#data = renormalize(data)
+	image.save(out_fd,format='jpeg')
+in_fd.close()
+out_fd.close()
