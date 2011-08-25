@@ -217,9 +217,6 @@ def resample_d(config,data):
 		data = data[0]
 	return resample(data,config['resample_poly_coef'])
 
-def fft(config,data):
-	data = abs(np.fft.fft(data))
-
 def plot(config,data):
 	if len(data.shape) == 3:
 		data = data[0,0,:]
@@ -231,7 +228,7 @@ def plot(config,data):
 	plt.plot(data)
 	plt.show()
 
-def zimg_plot(config,data):
+def img_plot(config,data):
 	if type(data)== list:
 		data = data[0]
 	if len(data.shape) == 2:

@@ -33,9 +33,7 @@ def parse():
 arg = parse()
 validator = Validator({'log':function.log_type,'float':float})
 config = ConfigObj('config.ini',configspec='configspec.ini')
-a = config.validate(validator)
-print a
-if not a:
+if not config.validate(validator):
 	raise Exception('config.ini does not validate with configspec.ini.')
 logging.basicConfig(filename='oct.log',level=config['log'])
 
@@ -44,11 +42,9 @@ if arg.filename:
 	config['filename']=arg.filename if arg.filename else 'data.dat'
 	
 for i in flags:
-	funame = i.replace('-','_')
-	print funame
-
+	function_name = i.replace('-','_')
 	if getattr(arg,funame):
-		fun = getattr(function,funame)
+		fun = getattr(function,function_name)
 		data = fun(config,data)	
 
 
