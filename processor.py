@@ -5,7 +5,7 @@ import cPickle
 import Image
 from configobj import ConfigObj
 from validate import Validator
-from function import transform,log_type
+from function import transform,log_type,resample
 
 flags = [
 	'calibrate-spectrum',
@@ -51,13 +51,16 @@ out_fd = open(arg.output_filename,'w',0)
 import matplotlib.pyplot as plt
 i=0
 raw_input()
-for i in range(19):
+for i in range(4):
 	print i
 	#info = cPickle.load(in_fd)
 	data = cPickle.load(in_fd)
+	plt.imshow(data)
+	plt.show()
 	#data = np.ndarray(**info)
-	#data = resample(data)
-	print 'x'
+	data = resample(data,config)
+
+	print 'x',data.shape
 	data2 = transform(data)
 	print 'y'
 	data3 = np.uint8(data2)

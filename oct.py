@@ -41,11 +41,14 @@ logging.basicConfig(filename='oct.log',level=config['log'])
 
 data = []
 if arg.filename:
-	config['filename']=filename if arg.filename else data.dat
+	config['filename']=arg.filename if arg.filename else 'data.dat'
 	
 for i in flags:
-	if getattr(arg,i.replace('-','_')):
-		fun = getattr(function,i)
+	funame = i.replace('-','_')
+	print funame
+
+	if getattr(arg,funame):
+		fun = getattr(function,funame)
 		data = fun(config,data)	
 
 
