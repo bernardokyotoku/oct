@@ -51,19 +51,20 @@ out_fd = open(arg.output_filename,'w',0)
 import matplotlib.pyplot as plt
 i=0
 raw_input()
-for i in range(4):
+for i in range(19):
 	print i
 	#info = cPickle.load(in_fd)
 	data = cPickle.load(in_fd)
-	plt.imshow(data)
-	plt.show()
 	#data = np.ndarray(**info)
 	data = resample(data,config)
 
 	print 'x',data.shape
-	data2 = transform(data)
+	data = transform(data.T).T
+	data = (data[0:512]/115128339849.0)*1000
+	#plt.imshow(data)
+	#plt.show()
 	print 'y'
-	data3 = np.uint8(data2)
+	data3 = np.uint8(data)
 	image = Image.frombuffer("L",data.shape,data=data3.data)
 	#data = renormalize(data)
 	image.save(out_fd,format='jpeg')
