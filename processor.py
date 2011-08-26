@@ -13,8 +13,8 @@ def parse():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.description = "OCT client."
-	parser.add_argument('-i',dest='input_filename')
-	parser.add_argument('-o',dest='output_filename')
+	parser.add_argument('-i',dest='in_file')
+	parser.add_argument('-o',dest='out_file')
 	for flag in flags:
 		parser.add_argument('--' + flag,action='store_true') 
 	return parser.parse_args()
@@ -30,9 +30,13 @@ for i in flags:
 	if getattr(arg,i.replace('-','_')):
 		fun = getattr(function,i)
 		data = fun(config,data)	
+
+in_file = arg.in_file if arg.in_file else config['in_file']
+out_file = arg.out_file if arg.out_file else config['out_file']
+
 while True:
-	in_fd = open(arg.input_filename)
-	out_fd = open(arg.output_filename,'w',0)
+	in_fd = open(in_file)
+	out_fd = open(out_file,'w',0)
 	while True:
 		try:
 			data = cPickle.load(in_fd)
