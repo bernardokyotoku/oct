@@ -25,7 +25,7 @@ def parse():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.description = "OCT client."
-	parser.add_argument('-o',dest='filename')
+	parser.add_argument('-o',dest='filename',default='data.dat')
 	for flag in flags:
 		parser.add_argument('--' + flag,action='store_true') 
 	return parser.parse_args()

@@ -9,19 +9,19 @@ from function import transform,log_type,resample
 
 flags = [ ] 
 
+validator = Validator({'log':log_type,'float':float})
+config = ConfigObj('config.ini',configspec='configspec.ini')
 def parse():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.description = "OCT client."
-	parser.add_argument('-i',dest='in_file')
-	parser.add_argument('-o',dest='out_file')
+	parser.add_argument('-i',dest='in_file', default=config['in_file'])
+	parser.add_argument('-o',dest='out_file', default=config['out_file'])
 	for flag in flags:
 		parser.add_argument('--' + flag,action='store_true') 
 	return parser.parse_args()
 
 arg = parse()
-validator = Validator({'log':log_type,'float':float})
-config = ConfigObj('config.ini',configspec='configspec.ini')
 if not config.validate(validator):
 	raise Exception('config.ini does not validate with configspec.ini.')
 logging.basicConfig(filename='oct.log',level=config['log'])
