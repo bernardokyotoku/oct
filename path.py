@@ -136,7 +136,7 @@ class Path:
 		numTomograms = self.numTomograms
 		numRecords = self.numRecords
 		path = make_scan_3D_path(x0,y0,xf,y0,numTomograms,numRecords)
-		#this should take care of the memory arrangement
+		#this takes care of the memory arrangement
 		return np.ascontiguousarray(path)
 	
 	def make_return_3D_positions(self):
@@ -153,6 +153,6 @@ class Path:
 		X = np.linspace(x0,xf,N)
 		Y = np.linspace(y0,yf,N)
 		path = np.vstack((X,Y)).T
-		#this should take care of the memory arrangement
+		#this takes care of the memory arrangement
 		return np.ascontiguousarray(path)
 
