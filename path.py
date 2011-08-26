@@ -25,16 +25,6 @@ def line(begin,end,lineDensity):
 	line = begin + v*t
 	return line.T
 
-def make_scan_3D_path(x0,xf,y0,yf,numRecords,numTomograms):
-	x = np.linspace(x0,xf,numRecords)
-	x.shape = (1,) + x.shape
-	X = x*np.ones((numTomograms,1))
-	y = np.linspace(y0,yf,numTomograms)
-	y.shape = y.shape + (1,)
-	Y = y*np.ones(numRecords)
-	scan_path = np.dstack([X,Y])
-	return scan_path
-
 def make_return_3D_path(x0,xf,y0,yf,tf,r,N,numTomograms):
 	f = np.poly1d(poly3(x0,xf,0,tf,r,r))
 	path = f(np.linspace(0,tf,N))
@@ -66,11 +56,6 @@ def make_line_path(x0,y0,xf,yf,N):
 def make_position_path(x0,r,t,N):
 	f = np.poly1d(poly3(0,x0,0,t,0,r))
 	return f(np.linspace(0,t,N))
-
-def make_2d_position_path(x0,y0,rx,ry,t,N):
-	X = make_position_path(x0,rx,t,N)
-	Y = make_position_path(y0,ry,t,N)
-	return np.vstack((X,Y))
 
 def third_order_line(x1,x2,t1,t2,r1,r2):
     	f = np.poly1d(poly3(x1,x2,t1,t2,r1,r2))
