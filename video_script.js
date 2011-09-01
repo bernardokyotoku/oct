@@ -13,7 +13,7 @@ function doload() {
   // testing from file:// URLs easier -- it will load
   // standard wallpapers on OSX or Vista.
   //file:///home/bernardo/Projects/oct/movie.flv
-//  images = [{ url: "file:///home/bernardo/Projects/oct/t.ogg", width: 640, height: 480  }
+ // images = [{ url: "file:///home/bernardo/Projects/oct/t.ogg", width: 640, height: 480  }
       images = [{ url: "http://localhost:8000/thesec.ogg", width: 640, height: 480  }
        ];
 

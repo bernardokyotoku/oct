@@ -35,7 +35,7 @@
          specified is /stream but you can change it here if an alternative is
          wanted or an extension is required
     -->
-    <shoutcast-mount>/thesec.ogg</shoutcast-mount>
+    <shoutcast-mount>/thesec.ogv</shoutcast-mount>
 
     <!-- Uncomment this if you want directory listings -->
     <!--
