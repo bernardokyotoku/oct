@@ -12,7 +12,9 @@ function doload() {
   // Load a few images; some extra stuff here for make
   // testing from file:// URLs easier -- it will load
   // standard wallpapers on OSX or Vista.
-      images = [{ url: "file:///home/bernardo/Projects/oct/movie.ogg", width: 1024, height: 1024 }, 
+  //file:///home/bernardo/Projects/oct/movie.flv
+//  images = [{ url: "file:///home/bernardo/Projects/oct/t.ogg", width: 640, height: 480  }
+      images = [{ url: "http://localhost:8000/thesec.ogg", width: 640, height: 480  }
        ];
 
   // Load the images in the background, and only add them once they're
