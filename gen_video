@@ -2,4 +2,4 @@
 if [ ! -e "raw_data" ]; then mkfifo raw_data; fi
 python image_generator.py -d &
 #ffmpeg2theora raw_data -vcodec mjpeg --inputfps 2 --noaudio -o -| oggfwd localhost 8000 hackme /thesec.ogg 
-ffmpeg -y -r 4 -bufsize 100 -vcodec mjpeg -f image2pipe -i raw_data -bufsize 100 -f ogg -vcodec libtheora pipe:1 | oggfwd localhost 8000 hackme /thesec.ogv
+ffmpeg -y -r 4 -f image2pipe -vcodec mjpeg -i raw_data -f ogg -vcodec libtheora pipe:1 | oggfwd localhost 8000 hackme /thesec.ogv

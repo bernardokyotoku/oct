@@ -1,0 +1,1 @@
+ffmpeg2theora /dev/video0 -f video4linux2 --inputfps 10 -o - | oggfwd localhost 8000 hackme /thesec.ogv
