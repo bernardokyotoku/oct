@@ -11,8 +11,8 @@ def parse():
 	parser.description = "Raw data simulator."
 	parser.add_argument('-o',dest='out_file', default='raw_data')
 	parser.add_argument('-count',dest='count', default=1000000000)
-	parser.add_argument('-height',dest='height', default=480)
-	parser.add_argument('-width',dest='width', default=640)
+	parser.add_argument('-height',dest='height', default=240)
+	parser.add_argument('-width',dest='width', default=320)
 
 	for flag in flags:
 		parser.add_argument('-' + flag, action='store_true') 
@@ -31,7 +31,7 @@ while True:
 	fd = open(arg.out_file,'w',0)
 	while True:
 		i += 1
-		print "ef",i
+		print i
 		m = 255*np.float32(image(i*0.1))
 		here = Image.frombuffer(mode = 'F',size=m.T.shape, data=m.data)
 		here = here.convert('L')
@@ -41,12 +41,12 @@ while True:
 		try:
 			here.save(fd,'jpeg')
 		except Exception, e:
-			print e
+			print e 
 			break
 		#dump(image(t),fd)
-		sleep(0.1)
+		sleep(0.05)
 		if (i >= int(arg.count)):
 			break
 	fd.close()
-	if arg.d:
-		break
+	if not arg.d:
+		print "Was braken"
