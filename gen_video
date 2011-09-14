@@ -2,5 +2,5 @@
 killall python
 if [ ! -e "raw_data" ]; then mkfifo raw_data; fi
 python image_generator.py -d & #-o /dev/stdout 
-#ffmpeg2theora raw_data --inputfps 20 --noaudio -o -| oggfwd localhost 8000 hackme /thesec.ogv 
-ffmpeg -y -r 20 -f image2pipe -vcodec mjpeg -i raw_data -f ogg -vcodec libtheora  pipe:1 | oggfwd localhost 8000 hackme /thesec.ogv
+ffmpeg2theora raw_data -f image2pipe -vcodec mjpeg --inputfps 20 --noaudio -o test.ogv  #-| oggfwd localhost 8000 hackme /thesec.ogv 
+#ffmpeg -y -r 20 -f image2pipe -vcodec mjpeg -i raw_data -f ogg -vcodec libtheora  pipe:1| cat | oggfwd localhost 8000 hackme /thesec.ogv
