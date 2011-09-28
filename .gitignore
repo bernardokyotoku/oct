@@ -1,3 +1,6 @@
 *.pyc
-*.o
+*.[oa]
 *.swp
+*.og[vg]
+*.dat
+*.flv
