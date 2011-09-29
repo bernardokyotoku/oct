@@ -1,0 +1,2 @@
+#!/bin/bash
+cat sample.ogv | oggfwd localhost 8000 hackme /thesec.ogv
