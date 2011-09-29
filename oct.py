@@ -43,7 +43,7 @@ if arg.filename:
 	
 for i in flags:
 	function_name = i.replace('-','_')
-	if getattr(arg,funame):
+	if getattr(arg,function_name):
 		fun = getattr(function,function_name)
 		data = fun(config,data)	
 
