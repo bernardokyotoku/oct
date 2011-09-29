@@ -80,7 +80,7 @@ def make_scan_3D_path(x0,y0,xf,yf,numTomograms,numRecords):
 	return scan_path
 
 class Path:
-	def __init__(self,mode,config):
+	def __init__(self,mode="single",config):
 		for key,value in config[mode].iteritems():
 			setattr(self,key,value)
 		self.i = 0 
