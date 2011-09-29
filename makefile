@@ -1,0 +1,2 @@
+clean:
+	rm *.pyc *.log
