@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+import hardware_control as hc
+import sys
+state = sys.argv[1]
+print "Turning laser", state
+hc.turn_laser(state)
