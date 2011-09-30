@@ -79,8 +79,34 @@ def make_scan_3D_path(x0,y0,xf,yf,numTomograms,numRecords):
 	scan_path = np.dstack([X,Y])
 	return scan_path
 
+def time_taken(p0,pm,acc):
+	"""time taken to go from p0 to pm under acceleration acc.
+	Starting from rest."""
+	return np.sqrt(2*(pm-p0)/acc)
+
+def acc_necessary(p0,pm,t):
+	"""Acceleration necessary to go from p0 to pm starting
+	from rest, under time t"""
+	return 2*(pm-p0)/t**2
+
+def path(p0,pf,acc,tmax):
+	acc.shape = (2,1)
+	p0,pf = np.array([p0]).T, np.array([pf]).T
+	steps = np.linspace(0,tmax,np.ceil(tmax))
+	steps = np.vstack((steps,steps))
+	p1 = p0 + acc * steps**2/2
+	p2 = pf - acc * steps**2/2
+	return np.hstack((p1,np.fliplr(p2)[:,1:]))
+
+def smooth_return(p0,pf,acc):
+	pm = (pf + p0)/2
+	tmax = np.max(time_taken(p0,pm,-acc))
+	acc = acc_necessary(p0,pm,tmax)
+	return np.ascontiguousarray(path(p0,pf,acc,tmax).T)
+
 class Path:
 	def __init__(self,config,mode="single"):
+
 		for key,value in config[mode].iteritems():
 			setattr(self,key,value)
 		self.i = 0 
@@ -98,8 +124,8 @@ class Path:
 
 		self.next_return = {
 			'3D':self.next_return_3D,
-			'single':self.next_return_single,
-			'continuous':self.next_return_single,
+			'single':lambda : self.return_positions,
+			'continuous':lambda : self.return_positions,
 				}[mode]
 
 		self.scan_path = {
@@ -110,9 +136,10 @@ class Path:
 
 		self.return_positions = {
 			'3D':self.make_return_3D_positions,
-			'single':lambda : self.scan_path[0],
-			'continuous':lambda : self.scan_path[0],
+			'single':make_single_smooth_return,
+			'continuous':make_single_smooth_return,
 				}[mode]()
+
 
 	def has_next_3D(self):
 		return self.i<self.numTomograms
@@ -123,9 +150,6 @@ class Path:
 	def next_3D(self):
 		self.i += 1
 		return self.scan_path[self.i-1]
-
-	def next_return_single(self):
-		return self.return_positions
 
 	def next_return_3D(self):
 		return self.return_positions[self.i-1]
@@ -138,6 +162,12 @@ class Path:
 		path = make_scan_3D_path(x0,y0,xf,y0,numTomograms,numRecords)
 		#this takes care of the memory arrangement
 		return np.ascontiguousarray(path)
+
+	def make_single_smooth_return(self):
+		p0 = np.array([self.x0,self.y0])
+		pf = np.array([self.xf,self.yf])
+		acc = self.acc
+		return smooth_return(p0,pf,acc)
 	
 	def make_return_3D_positions(self):
 		positions = self.scan_path[:,0]
