@@ -106,7 +106,6 @@ def smooth_return(p0,pf,acc):
 
 class Path:
 	def __init__(self,config,mode="single"):
-
 		for key,value in config[mode].iteritems():
 			setattr(self,key,value)
 		self.i = 0 
