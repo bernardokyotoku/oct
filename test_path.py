@@ -9,7 +9,8 @@ def test_has_Path_object_creation():
 				"y0":0,
 				"xf":1,
 				"yf":1,
-				"numRecords":1}}
+				"numRecords":1,
+				"acc":0.1}}
 	path = Path(config, "single")
 	return path
 
