@@ -185,7 +185,7 @@ def scan(config,data,mode):
 	import serial
 	ser = serial.Serial('/dev/ttyUSB0',baudrate=115200);ser.write('oct=1\rscan=1\r');ser.close()
 	scope = configure_scope(mode,config['scope'])
-	path = Path(mode,config)
+	path = Path(config,mode)
 
 	global interrupted
 	interrupted = False
