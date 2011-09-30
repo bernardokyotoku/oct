@@ -82,7 +82,7 @@ def make_scan_3D_path(x0,y0,xf,yf,numTomograms,numRecords):
 def time_taken(p0,pm,acc):
 	"""time taken to go from p0 to pm under acceleration acc.
 	Starting from rest."""
-	return np.sqrt(2*(pm-p0)/acc)
+	return np.sqrt(np.abs(2*(pm-p0)/acc))
 
 def acc_necessary(p0,pm,t):
 	"""Acceleration necessary to go from p0 to pm starting
