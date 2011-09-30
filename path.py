@@ -163,8 +163,8 @@ class Path:
 		return np.ascontiguousarray(path)
 
 	def make_single_smooth_return(self):
-		p0 = np.array([self.x0,self.y0])
-		pf = np.array([self.xf,self.yf])
+		pf = np.array([self.x0,self.y0])
+		p0 = np.array([self.xf,self.yf])
 		acc = self.acc
 		return smooth_return(p0,pf,acc)
 	
