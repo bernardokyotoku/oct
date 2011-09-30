@@ -135,8 +135,8 @@ class Path:
 
 		self.return_positions = {
 			'3D':self.make_return_3D_positions,
-			'single':make_single_smooth_return,
-			'continuous':make_single_smooth_return,
+			'single':self.make_single_smooth_return,
+			'continuous':self.make_single_smooth_return,
 				}[mode]()
 
 
