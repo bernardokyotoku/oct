@@ -6,3 +6,5 @@
 *.flv
 *.log
 *.zip
+*.gz
+*.mjpeg
