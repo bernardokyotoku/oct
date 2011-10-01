@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
+import matplotlib.pyplot as plt
 import logging
 import sys
 import cPickle
@@ -17,9 +18,11 @@ def main(config,arg):
 			data = cPickle.load(in_fd)
 		except Exception:
 			break
+		parameters = {"brightness":-100,"contrast":1}
 		data = resample(data,config)
 		data = transform(data.T).T
-		data = 1000*(data[0:512]/115057684827.0)
+		data = 10*np.log(data)
+		data = renormalize(data,parameters)
 		data = np.ascontiguousarray(np.uint8(data))
 		image = Image.frombuffer("L",data.shape,data=data.data)
 		try:
@@ -29,6 +32,11 @@ def main(config,arg):
 	in_fd.close()
 	out_fd.close()
 	return arg.daemon
+
+def renormalize(data,parameters):
+	data = data + parameters["brightness"]
+	data = data * parameters["contrast"]
+	return data
 
 def parse_config():
 	validator = Validator({'log':log_type,'float':float})
