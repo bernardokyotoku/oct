@@ -1,29 +1,133 @@
 <html>
 	<head>
+
+<link rel="stylesheet" href="css/sliders.css" type="text/css" >
 <link rel="stylesheet" href="css/blueprint/screen.css" type="text/css" media="screen, projection">
 <link rel="stylesheet" href="css/blueprint/print.css" type="text/css" media="print"> 
 <!--[if lt IE 8]>
 <link rel="stylesheet" href="css/blueprint/ie.css" type="text/css" media="screen, projection">
 <![endif]-->
-	  <script language="javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-       <script language="javascript" src="http://revolunet.github.com/VLCcontrols/src/jquery-vlc.js"></script>
-	    <link rel="stylesheet" type="text/css" href="http://revolunet.github.com/VLCcontrols/src/styles.css" />
+<script language="javascript" src="http://revolunet.github.com/VLCcontrols/src/jquery-vlc.js"></script>
+<link rel="stylesheet" type="text/css" href="http://revolunet.github.com/VLCcontrols/src/styles.css" />
 
-		<script language="javascript">
-		$(document).ready(function() {
-		         var player = VLCobject.embedPlayer('vlc1', 400, 300);
-			  player.play('test.avi');
-				       });
-		  </script>
+<!--script language="javascript">
+	$(document).ready(function() {
+		var player = VLCobject.embedPlayer('vlc1', 400, 300);
+		player.play('test.avi');
+	});
+</script-->
+
 	</head>
-	<body>
+<body>
+<!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
 
-
-		<embed type="application/x-vlc-plugin" 
+<div class="container">
+	<div id="first" class="span-5 border">
+	</div>
+	<div class="span-5 append-4">
+		<!--embed type="application/x-vlc-plugin" 
 		name="player"
 		pluginspage="http://www.videolan.org" 
 		version="VideoLAN.VLCPlugin.2"  
-		target="fifo"></embed>
-	</body>
+		target="fifo"></embed-->
+	</div>
+	<div id="t1" class="span-5 border">
+		The third column
+	</div>
+	<div class="span-5 last">
+		<p/><button class="fg-button ui-state-default ui-priority-primary ui-corner-all ui-state-active">Scan</button>
+		<p/><button class="fg-button ui-state-default ui-priority-primary ui-corner-all ui-state-active">Scan3D</button>
+		<button class="fg-button ui-state-default ui-priority-primary ui-corner-all ui-state-active">Stop</button>
+	</div>
+		<div class="colorful-slider orange">
+			<div class="slider-handle ui-draggable" style="top: 90px; "></div>
+		</div>
+		<div id="sketch" style="width:400px; height:300px;" background="blue"></div>
+		<!--svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+			<rect id="camera" x="10" y="10" width="400" height="300" style="fill:white;stroke-width:2;stroke:rgb(0,0,0)"/>
+		</svg-->
+</div>
+
+<!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
+<script language="javascript" src="./js/jquery.min.js"></script>
+<script language="javascript" src="./js/jquery-ui.min.js"></script>
+<script language="javascript" src="./js/jquery.svg.min.js"></script>
+<script language="javascript" src="./js/sliders.js"></script>
+<script>
+line= null;
+start = null;
+var drawNodes = [];
+$('#sketch').svg({
+    onLoad: function (svg) {
+        sketchpad = svg;
+        var surface = svg.rect(0, 0, '100%', '100%', {
+            id: 'surface',
+            fill: 'green'
+        });
+        $(surface).mousedown(startDrag).mousemove(dragging).mouseup(endDrag);
+//	resetSize(svg, '100%', '100%');
+    }
+});
+function startDrag(evt){
+	x=evt.offsetX ;//- $("#sketch").offset().left;
+	y=evt.offsetY; 
+	$("#t1").text(""+x+","+y);
+	start = {
+		X: evt.offsetX,
+		Y: evt.offsetY
+	};
+    event.preventDefault();
+}
+function dragging(event) {
+    if (!start) {
+        return;
+    }
+    if (!line) {
+       line = sketchpad.line(0, 0, 0, 0, {
+            fill: 'blue',
+            stroke: '#c0c0c0',
+            strokeWidth: 1,
+            strokeDashArray: '2,2'
+        });
+        $(line).mouseup(endDrag);
+    }
+    sketchpad.change(line, {
+        x1: start.X,
+        y1: start.Y,
+        x2: event.offsetX,
+        y2: event.offsetY,
+            stroke: '#c0c0c0',
+            strokeWidth: 1,
+            strokeDashArray: '2,2'
+    });
+    event.preventDefault();
+}
+
+function endDrag(event) {
+    if (!start) {
+        return;
+    }
+    sketchpad.change(line, {
+        x1: start.X,
+        y1: start.Y,
+        x2: event.offsetX,
+        y2: event.offsetY,
+	    stroke:'black',
+            strokeWidth: 1,
+            strokeDashArray: null,
+    });
+    //drawShape(start.X, start.Y, event.offsetX , event.offsetY );
+    start = null;
+    event.preventDefault();
+}
+
+function drawShape(x1, y1, x2, y2) {
+       line = sketchpad.line(x1, y1, x2, y2, {
+	    stroke:'black',
+            strokeWidth: 1
+        });
+}
+</script>
+</body>
 </html>
 
