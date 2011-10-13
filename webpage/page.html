@@ -35,8 +35,8 @@
 		The third column
 	</div>
 	<div class="span-5 last">
-		<p/><button class="fg-button ui-state-default ui-priority-primary ui-corner-all ui-state-active">Scan</button>
-		<p/><button class="fg-button ui-state-default ui-priority-primary ui-corner-all ui-state-active">Scan3D</button>
+		<p/><button id="2D" class="fg-button ui-state-default ui-priority-primary ui-corner-all ui-state-active">Scan</button>
+		<p/><button id="3D" class="fg-button ui-state-default ui-priority-primary ui-corner-all ui-state-active">Scan3D</button>
 		<button class="fg-button ui-state-default ui-priority-primary ui-corner-all ui-state-active">Stop</button>
 	</div>
 		<div class="colorful-slider orange">
@@ -54,9 +54,40 @@
 <script language="javascript" src="./js/jquery.svg.min.js"></script>
 <script language="javascript" src="./js/sliders.js"></script>
 <script>
-line= null;
+outline= null;
 start = null;
-var drawNodes = [];
+var drawNodes = []; 
+$('#2D').mouseup(function switchTo2D(event){
+	    get_outline = function(x1,y1,x2,y2,settings){
+	    	return sketchpad.line(x1,y1,x2,y2,settings);
+	    };
+		update_outline = function(outline,settings){
+			return sketchpad.change(outline, settings);
+		};
+});
+
+$('#3D').mouseup(function (event){
+	get_outline = function(x1,y1,x2,y2,settings){
+		return sketchpad.rect(x1,y1,x2,y2,settings);
+	};
+	update_outline = function(outline,settings){
+		var left = Math.min(settings.x1, settings.x2);
+		var top = Math.min(settings.y1, settings.y2);
+		var right = Math.max(settings.x1, settings.x2);
+		var bottom = Math.max(settings.y1, settings.y2);
+		return sketchpad.change(outline, {
+			fill:"none",
+			x: left, 
+			y: top,
+			width: right - left,
+			height: bottom - top,
+			stroke: settings.stroke,
+			strokeWidth: settings.strokeWidth,
+			strokeDashArray: settings.strokeDashArray 
+		});
+	};
+});
+
 $('#sketch').svg({
     onLoad: function (svg) {
         sketchpad = svg;
@@ -68,6 +99,7 @@ $('#sketch').svg({
 //	resetSize(svg, '100%', '100%');
     }
 });
+
 function startDrag(evt){
 	x=evt.offsetX ;//- $("#sketch").offset().left;
 	y=evt.offsetY; 
@@ -77,21 +109,23 @@ function startDrag(evt){
 		Y: evt.offsetY
 	};
     event.preventDefault();
+	sketchpad.remove(outline)
+	outline = null;
 }
+
 function dragging(event) {
     if (!start) {
         return;
     }
-    if (!line) {
-       line = sketchpad.line(0, 0, 0, 0, {
-            fill: 'blue',
+    if (!outline) {
+       outline = get_outline(0, 0, 0, 0, {
             stroke: '#c0c0c0',
             strokeWidth: 1,
             strokeDashArray: '2,2'
         });
-        $(line).mouseup(endDrag);
+        $(outline).mouseup(endDrag);
     }
-    sketchpad.change(line, {
+    update_outline(outline, {
         x1: start.X,
         y1: start.Y,
         x2: event.offsetX,
@@ -107,7 +141,7 @@ function endDrag(event) {
     if (!start) {
         return;
     }
-    sketchpad.change(line, {
+    update_outline(outline, {
         x1: start.X,
         y1: start.Y,
         x2: event.offsetX,
@@ -122,7 +156,7 @@ function endDrag(event) {
 }
 
 function drawShape(x1, y1, x2, y2) {
-       line = sketchpad.line(x1, y1, x2, y2, {
+       outline = get_outline(x1, y1, x2, y2, {
 	    stroke:'black',
             strokeWidth: 1
         });
