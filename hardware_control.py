@@ -9,4 +9,8 @@ def set_voltage_to_channel(channel,voltage):
 
 def turn_laser(state):
 	voltage = 5 if state == "on" else 0
-	set_voltage_to_channel("Dev1/ao2",voltage)
+	set_voltage_to_channel("Dev3/ao2",voltage)
+
+def turn_pointer(state):
+	voltage = 4 if state == "on" else 0
+	set_voltage_to_channel("Dev3/ao3",voltage)
