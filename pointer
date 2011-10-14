@@ -1,12 +1,6 @@
 #!/usr/bin/env python
-from nidaqmx import AnalogOutputTask
+import hardware_control as hc
 import sys
-task = AnalogOutputTask()
-task.create_voltage_channel("Dev3/ao3",min_val=0,max_val=5)
-if len(sys.argv) < 2:
-	print "argument missing"
-	sys.exit()
-if sys.argv[1].upper() == "ON":
-	task.write(5)
-else:
-	task.write(0)
+state = sys.argv[1]
+print "Turning pointer", state
+hc.turn_pointer(state)
