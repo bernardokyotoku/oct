@@ -51,6 +51,9 @@
 		<!--svg xmlns="http://www.w3.org/2000/svg" version="1.1">
 			<rect id="camera" x="10" y="10" width="400" height="300" style="fill:white;stroke-width:2;stroke:rgb(0,0,0)"/>
 		</svg-->
+		<div id="config_fold" class="span-12">Config
+			<div id="config">configuration</div>
+		</div>
 </div>
 
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
@@ -61,12 +64,15 @@
 <script>
 outline= null;
 start = null;
+scan_settings = null;
 var drawNodes = []; 
 $('#2D').mouseup(function switchTo2D(event){
 	    get_outline = function(x1,y1,x2,y2,settings){
 	    	return sketchpad.line(x1,y1,x2,y2,settings);
 	    };
 		update_outline = function(outline,settings){
+			scan_settings = settings;
+			scan_settings.mode = '2D'
 			return sketchpad.change(outline, settings);
 		};
 });
@@ -80,6 +86,8 @@ $('#3D').mouseup(function (event){
 		var top = Math.min(settings.y1, settings.y2);
 		var right = Math.max(settings.x1, settings.x2);
 		var bottom = Math.max(settings.y1, settings.y2);
+		scan_settings = settings;
+		scan_settings.mode = '3D'
 		return sketchpad.change(outline, {
 			fill:"none",
 			x: left, 
@@ -93,10 +101,14 @@ $('#3D').mouseup(function (event){
 	};
 });
 $("#scan").mouseup(function(event){
-	$.get("../test",function(data){
+	$.get("../scan",scan_settings,function(data){
 		alert(data);
 	});
 });
+
+$("#config_fold").mouseup(function(){
+	$("#config").toggle()
+})
 
 $('#sketch').svg({
     onLoad: function (svg) {

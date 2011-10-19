@@ -1,4 +1,7 @@
 from django.http import HttpResponse
+#import function
 
-def test(request):
-	return HttpResponse("hello world")
+def scan(request):
+	scan_settings = request.GET
+	mode = scan_settings['mode']
+	return HttpResponse("mode ="+mode)
