@@ -21,39 +21,34 @@
 <body>
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
 
-<div class="container">
-	<div id="oct_div" class="span-18">
-		<!--embed type="application/x-vlc-plugin" 
-		name="player"
-		pluginspage="http://www.videolan.org" 
-		version="VideoLAN.VLCPlugin.2"  
-		target="fifo"></embed-->
-	</div>
-	<div id="t1" class="span-1">
+<div id="header" class="span-31 last">
+	<div class="span-4 boarder"> HEADER </div>
+	<div class="span-4"> OCT </div>
+	<div class="span-4" id="config"> CONFIG </div>
+	<div class="span-19 last"> e </div>
+</div>
+<div id="oct_div" class="span-20" style="height:750px;">
+	<!--embed type="application/x-vlc-plugin" 
+	name="player"
+	pluginspage="http://www.videolan.org" 
+	version="VideoLAN.VLCPlugin.2"  
+	target="fifo"></embed-->
+</div>
+<div id="t1" class="span-11 last">
+	<div class="span-8">
+		<p><input id="line_density" type="text">Line density</input></p>
 		<div class="colorful-slider orange">
 			<div class="slider-handle ui-draggable" style="top: 90px;"></div>
 		</div>
 	</div>
-	<div class="span-5 last">
-		fe
-	</div>
-	<div class="span-10">
-		<p><input id="line_density" type="text">Line density</input></p>
-	</div>
-	<div class="span-2">
+	<div class="span-3 last">
 		<p>
 			<input id="2D" type="radio" name="ScanType">Line</button>
 			<br><input id="3D" type="radio" name="ScanType">Area</button>
 		</p>
 		<p><button id="scan" >scan</button></p>
 	</div>
-	<div id="sketch" class="span-12 last" background="blue">
-	</div>
-		<!--svg xmlns="http://www.w3.org/2000/svg" version="1.1">
-			<rect id="camera" x="10" y="10" width="400" height="300" style="fill:white;stroke-width:2;stroke:rgb(0,0,0)"/>
-		</svg-->
-	<div id="config_fold" class="span-12">Config
-		<div id="config">configuration</div>
+	<div id="sketch" class="span-11 last" style="height:350px;">
 	</div>
 </div>
 
@@ -114,13 +109,14 @@ $("#config_fold").mouseup(function(){
 $('#oct_div').svg({
     onLoad: function (svg) {
         oct_image = svg;
-        var surface = svg.rect(0, 0, 640, 480, {
-            id: 'surface',
+        var image = svg.rect(0, 0, "100%", "100%", {
+            id: 'oct',
             fill: 'white',
 			stroke:'black',
         });
-    }
+    },
 });
+
 
 $('#sketch').svg({
     onLoad: function (svg) {
@@ -131,14 +127,12 @@ $('#sketch').svg({
 			stroke:'black',
         });
         $(surface).mousedown(startDrag).mousemove(dragging).mouseup(endDrag);
-//	resetSize(svg, '100%', '100%');
     }
 });
 
 function startDrag(evt){
 	x=evt.offsetX ;//- $("#sketch").offset().left;
 	y=evt.offsetY; 
-	$("#t1").text(""+x+","+y);
 	start = {
 		X: evt.offsetX,
 		Y: evt.offsetY
