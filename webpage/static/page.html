@@ -22,8 +22,7 @@
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
 
 <div class="container">
-	<div class="span-18">
-		sr
+	<div id="oct_div" class="span-18">
 		<!--embed type="application/x-vlc-plugin" 
 		name="player"
 		pluginspage="http://www.videolan.org" 
@@ -46,14 +45,14 @@
 		<br><input id="3D" type="radio" name="ScanType">Area</button></p>
 		<p><button id="scan" >scan</button></p>
 	</div>
-	<div id="sketch" class="span-5 last" style="width:400px; height:300px;" background="blue">
+	<div id="sketch" class="span-12 last" background="blue">
 	</div>
 		<!--svg xmlns="http://www.w3.org/2000/svg" version="1.1">
 			<rect id="camera" x="10" y="10" width="400" height="300" style="fill:white;stroke-width:2;stroke:rgb(0,0,0)"/>
 		</svg-->
-		<div id="config_fold" class="span-12">Config
-			<div id="config">configuration</div>
-		</div>
+	<div id="config_fold" class="span-12">Config
+		<div id="config">configuration</div>
+	</div>
 </div>
 
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
@@ -110,10 +109,21 @@ $("#config_fold").mouseup(function(){
 	$("#config").toggle()
 })
 
+$('#oct_div').svg({
+    onLoad: function (svg) {
+        oct_image = svg;
+        var surface = svg.rect(0, 0, 640, 480, {
+            id: 'surface',
+            fill: 'white',
+			stroke:'black',
+        });
+    }
+});
+
 $('#sketch').svg({
     onLoad: function (svg) {
         sketchpad = svg;
-        var surface = svg.rect(0, 0, '100%', '100%', {
+        var surface = svg.rect(0, 0, 400, 300, {
             id: 'surface',
             fill: 'white',
 			stroke:'black',
