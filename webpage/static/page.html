@@ -60,7 +60,7 @@ outline= null;
 start = null;
 scan_settings = null;
 var drawNodes = []; 
-$('#2D').mouseup(function switchTo2D(event){
+$('#2D').click(function switchTo2D(event){
 	    get_outline = function(x1,y1,x2,y2,settings){
 	    	return sketchpad.line(x1,y1,x2,y2,settings);
 	    };
@@ -71,7 +71,7 @@ $('#2D').mouseup(function switchTo2D(event){
 		};
 });
 
-$('#3D').mouseup(function (event){
+$('#3D').click(function (event){
 	get_outline = function(x1,y1,x2,y2,settings){
 		return sketchpad.rect(x1,y1,x2,y2,settings);
 	};
