@@ -23,35 +23,37 @@
 <body>
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
 
-<div id="header" class="span-31 last">
-	<div class="span-4 boarder"> HEADER </div>
-	<div class="span-4"> OCT </div>
-	<div class="span-4" id="config"> CONFIG </div>
-	<div class="span-19 last"> e </div>
-</div>
-<div id="oct_div" class="span-20" style="height:750px;">
-	<!--embed type="application/x-vlc-plugin" 
-	name="player"
-	pluginspage="http://www.videolan.org" 
-	version="VideoLAN.VLCPlugin.2"  
-	target="fifo"></embed-->
-</div>
-<div id="t1" class="span-11 last">
-	<div class="span-8">
-		<p><input id="line_density" type="text">Line density</input></p>
-		<div id="slider" class="ui-slider ui-slider-vertical" > </div>
+<div id="tabs" class="span-31 last">
+	<ul>
+		<li ><a>HEADER</a></li>
+		<li ><a href="#tabs-1">OCT</a></li>
+		<li ><a>CONFIG</a></li>
+	</ul>
+	<div id="tabs-1" class="span-31" style="height:720px;">
+		<div id="oct_div" class="span-19" style="height:700px;">
+			<!--embed type="application/x-vlc-plugin" 
+			name="player"
+			pluginspage="http://www.videolan.org" 
+			version="VideoLAN.VLCPlugin.2"  
+			target="fifo"></embed-->
+		</div>
+		<div id="t1" class="span-11 last">
+			<div class="span-8">
+				<p><input id="line_density" type="text">Line density</input></p>
+				<div id="slider" class="ui-slider ui-slider-vertical" > </div>
+			</div>
+			<div class="span-3 last">
+				<p>
+					<input id="2D" type="radio" name="ScanType">Line</button>
+					<br><input id="3D" type="radio" name="ScanType">Area</button>
+				</p>
+				<p><button id="scan" >scan</button></p>
+			</div>
+			<div id="sketch" class="span-11 last" style="height:350px;">
+			</div>
+		</div>
 	</div>
-	<div class="span-3 last">
-		<p>
-			<input id="2D" type="radio" name="ScanType">Line</button>
-			<br><input id="3D" type="radio" name="ScanType">Area</button>
-		</p>
-		<p><button id="scan" >scan</button></p>
-	</div>
-	<div id="sketch" class="span-11 last" style="height:350px;">
-	</div>
 </div>
-
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
 <script>
 outline= null;
@@ -92,6 +94,7 @@ $('#3D').mouseup(function (event){
 		});
 	};
 });
+$("#tabs").tabs();
 $("button").button();
 $("#scan").click(function(event){
 	$.get("../scan",scan_settings,function(data){
