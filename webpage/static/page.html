@@ -43,10 +43,10 @@
 				<div id="slider" class="ui-slider ui-slider-vertical" > </div>
 			</div>
 			<div class="span-3 last">
-				<p>
-					<input id="2D" type="radio" name="ScanType">Line</button>
-					<br><input id="3D" type="radio" name="ScanType">Area</button>
-				</p>
+				<div id="scantype">	
+					<input id="2D" type="radio" name="ScanType"/><label for="2D">Line</label>
+					<input id="3D" type="radio" name="ScanType"/><label for="3D">Area</label>
+				</div>
 				<p><button id="scan" >scan</button></p>
 			</div>
 			<div id="sketch" class="span-11 last" style="height:350px;">
@@ -94,6 +94,7 @@ $('#3D').mouseup(function (event){
 		});
 	};
 });
+$("#scantype").buttonset();
 $("#tabs").tabs();
 $("button").button();
 $("#scan").click(function(event){
