@@ -56,9 +56,10 @@ def parse_arguments():
 		parser.add_argument('--' + flag,action='store_true',default=False) 
 	return parser.parse_args()
 
-config = parse_config()
-arg = parse_arguments()
-logging.basicConfig(filename='oct.log',level=config['log'])
+if __name__ == "__main":
+	config = parse_config()
+	arg = parse_arguments()
+	logging.basicConfig(filename='oct.log',level=config['log'])
 
 while __name__ == "__main__":
 	repeat = main(config,arg)

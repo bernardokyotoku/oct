@@ -9,8 +9,8 @@
 <!--[if lt IE 8]>
 <link rel="stylesheet" href="css/blueprint/ie.css" type="text/css" media="screen, projection">
 <![endif]-->
-<script language="javascript" src="http://revolunet.github.com/VLCcontrols/src/jquery-vlc.js"></script>
-<link rel="stylesheet" type="text/css" href="http://revolunet.github.com/VLCcontrols/src/styles.css" />
+<!--script language="javascript" src="http://revolunet.github.com/VLCcontrols/src/jquery-vlc.js"></script-->
+<!--link rel="stylesheet" type="text/css" href="http://revolunet.github.com/VLCcontrols/src/styles.css" /-->
 
 <!--script language="javascript">
 	$(document).ready(function() {
@@ -23,36 +23,46 @@
 <body>
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
 
-<div id="tabs" class="span-31 last">
+<div id="tabs" style="position:relative;width:auto;height:750px;" align=center>
 	<ul>
-		<li ><a>HEADER</a></li>
-		<li ><a href="#tabs-1">OCT</a></li>
-		<li ><a>CONFIG</a></li>
+		<li><a>HEADER</a></li>
+		<li><a href="#oct_tab">OCT</a></li>
+		<li><a href="#config_tab" id="config_fold">CONFIG</a></li>
 	</ul>
-	<div id="tabs-1" class="span-31" style="height:720px;">
-		<div id="oct_div" class="span-19" style="height:700px;">
+	<div id="oct_tab" style="position:relative;width:auto;height:700px;">
+		<div id="oct_div" style="float:left;width:790px;height:700px;">
 			<!--embed type="application/x-vlc-plugin" 
 			name="player"
 			pluginspage="http://www.videolan.org" 
 			version="VideoLAN.VLCPlugin.2"  
 			target="fifo"></embed-->
 		</div>
-		<div id="t1" class="span-11 last">
-			<div class="span-8">
-				<p><input id="line_density" type="text">Line density</input></p>
-				<div id="slider" class="ui-slider ui-slider-vertical" > </div>
+		<div style="float:left;width:100px;height:700px;" align=center > 
+		</div>
+		<div style="float:left;width:30px;height:700px;" align=center > 
+			<div id="slider" style="width:10px;height:700px;" class="ui-slider ui-slider-vertical" > </div>
+		</div>
+		<div id="rightd" style="float:left;width:auto;height:700px;" align=center>
+			<div style="float:clear;height:360px;width:300px;">
+				<input id="line_density" type="text" value="fe">
 			</div>
-			<div class="span-3 last">
-				<div id="scantype">	
-					<input id="2D" type="radio" name="ScanType"/><label for="2D">Line</label>
-					<input id="3D" type="radio" name="ScanType"/><label for="3D">Area</label>
+			<div style="float:clear;height:20px;width:300px;">
+				<div style="float:left;width:100%;">
+					<button id="scan" style="float:left;width:100%;">scan</button>
 				</div>
-				<p><button id="scan" >scan</button></p>
+				<div style="float:left;width:100%;" id="scantype">	
+					<input id="2D" type="radio" name="ScanType"/><label style="width:49%;" for="2D">Line</label>
+					<input id="3D" type="radio" name="ScanType"/><label style="width:49%;" for="3D">Area</label>
+				</div>
 			</div>
-			<div id="sketch" class="span-11 last" style="height:350px;">
+			<div id="sketch" style="height:200px;width:300px;">
 			</div>
 		</div>
 	</div>
+	<div id="config_tab"></div>
+</div>
+<div id="footer" align=center>
+	<span class="ui-icon ui-icon-info"></span>F11 - Toggle fullscreen
 </div>
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
 <script>
@@ -95,7 +105,7 @@ $('#3D').click(function (event){
 	};
 });
 $("#scantype").buttonset();
-$("#tabs").tabs();
+$("#tabs").tabs().select('oct_tab');
 $("button").button();
 $("#scan").click(function(event){
 	$.get("../scan",scan_settings,function(data){
@@ -103,9 +113,26 @@ $("#scan").click(function(event){
 	});
 });
 
-$("#config_fold").mouseup(function(){
-	$("#config").toggle()
+$("#config_fold").click(function(){
+	$.getJSON("../config",function(data){
+		co =data;
+		traverse(data,visitor);
+	});
 })
+
+function traverse(data,visit){
+	for(var key in data){
+		if(typeof data[key]=== "object"){
+			traverse(data[key],visitor);
+		}else{
+			visitor(key,data);	
+		}
+	}
+}
+
+function visitor(key,data){
+	$("#config_tab").append("<br>"+key+"<input type='text' value='"+data[key]+"'/>")
+}
 
 $("#oct_div").svg({
     onLoad: function (svg) {
@@ -122,7 +149,7 @@ $("#oct_div").svg({
 $('#sketch').svg({
     onLoad: function (svg) {
         sketchpad = svg;
-        var surface = svg.rect(0, 0, 400, 300, {
+        var surface = svg.rect(0, 0, "100%", "100%", {
             id: 'surface',
             fill: 'white',
 			stroke:'black',

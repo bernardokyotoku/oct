@@ -1,11 +1,3 @@
-try:
-	import niScope
-except Exception:
-	print "niScope missing, continuing anyway"
-try:
-	from nidaqmx import AnalogOutputTask
-except Exception:
-	print "nidaqmx missing, continuing anyway"
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,7 +19,6 @@ def signal_handler(signal, frame):
 	print "interrupt"
 	global interrupted
 	interrupted = True
-signal.signal(signal.SIGINT, signal_handler)
 
 def log_type(value):
 	try:
@@ -109,6 +100,10 @@ def convert_path_to_voltage(path,path_to_voltage_constants):
 	return path*T
 
 def configure_daq(mode,daq_config):
+	try:
+		from nidaqmx import AnalogOutputTask
+	except Exception:
+		print "nidaqmx missing, continuing anyway"
 	daq = AnalogOutputTask()
 	daq.create_voltage_channel(**daq_config['X'])
 	daq.create_voltage_channel(**daq_config['Y'])
@@ -122,6 +117,10 @@ def adjust_scope_config_to_scan(mode,config):
 	config['scope']['Horizontal']['numPts'] = numPts
 
 def configure_scope(mode,config):
+	try:
+		import niScope
+	except Exception:
+		print "niScope missing, continuing anyway"
 	def fetch(self,memory):
 		ch = config['VerticalSample']['channelList']
 		self.Fetch(ch,memory)
@@ -190,6 +189,7 @@ def scan(config,data,mode):
 	global interrupted
 	interrupted = False
 	fd = open(config['filename'],'w',0)
+	signal.signal(signal.SIGINT, signal_handler)
 	while path.has_next() and not interrupted:
 		tomogram = memory.next()
 		signal = convert_path_to_voltage(path.next(),config['path_to_voltage'])
