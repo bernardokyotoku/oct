@@ -116,22 +116,24 @@ $("#scan").click(function(event){
 $("#config_fold").click(function(){
 	$.getJSON("../config",function(data){
 		co =data;
-		traverse(data,visitor);
+		traverse(data,visitor,$("#config_tab"));
 	});
 })
 
-function traverse(data,visit){
+function traverse(data,visit,pare){
 	for(var key in data){
 		if(typeof data[key]=== "object"){
-			traverse(data[key],visitor);
+			traverse(data[key],visitor,pare);
 		}else{
-			visitor(key,data);	
+			visitor(key,data,pare);	
 		}
 	}
 }
+function section(key){
 
-function visitor(key,data){
-	$("#config_tab").append("<br>"+key+"<input type='text' value='"+data[key]+"'/>")
+}
+function visitor(key,data,pare){
+	pare.append("<br>"+key+"<input type='text' value='"+data[key]+"'/>")
 }
 
 $("#oct_div").svg({
