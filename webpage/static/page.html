@@ -4,7 +4,9 @@
 <script type="text/javascript" src="js/jquery-1.6.2.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui-1.8.16.custom.min.js"></script>
 <script language="javascript" src="./js/jquery.svg.min.js"></script>
+<script type="text/javascript" src="js/jquery.treeview.js"></script>
 <link rel="stylesheet" href="css/blueprint/screen.css" type="text/css" media="screen, projection">
+<link rel="stylesheet" href="css/jquery.treeview.css" type="text/css" media="screen, projection">
 <link rel="stylesheet" href="css/blueprint/print.css" type="text/css" media="print"> 
 <!--[if lt IE 8]>
 <link rel="stylesheet" href="css/blueprint/ie.css" type="text/css" media="screen, projection">
@@ -23,7 +25,7 @@
 <body>
 <!--BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY BODY -->
 
-<div id="tabs" style="position:relative;width:auto;height:750px;" align=center>
+<div id="tabs" style="position:relative;width:auto;height:750px;" >
 	<ul>
 		<li><a>HEADER</a></li>
 		<li><a href="#oct_tab">OCT</a></li>
@@ -59,7 +61,7 @@
 			</div>
 		</div>
 	</div>
-	<div id="config_tab"></div>
+	<div id="config_tab" align=left></div>
 </div>
 <div id="footer" align=center>
 	<span class="ui-icon ui-icon-info"></span>F11 - Toggle fullscreen
@@ -117,23 +119,33 @@ $("#config_fold").click(function(){
 	$.getJSON("../config",function(data){
 		co =data;
 		traverse(data,visitor,$("#config_tab"));
+		$("#config_tab").treeview({
+			collapsed:true,
+			animated:"fast",
+		});
 	});
 })
 
 function traverse(data,visit,pare){
 	for(var key in data){
 		if(typeof data[key]=== "object"){
-			traverse(data[key],visitor,pare);
+			new_section = section(key,pare);
+			traverse(data[key],visitor,new_section);
 		}else{
 			visitor(key,data,pare);	
 		}
 	}
 }
-function section(key){
+function section(key,pare){
+	var li = $("<li><a href='#'>"+key+"</a></li>");
+	var ul = $("<ul></ul>");
+	li.append(ul);
+	pare.append(li);
+	return ul;
 
 }
 function visitor(key,data,pare){
-	pare.append("<br>"+key+"<input type='text' value='"+data[key]+"'/>")
+	pare.append("<li>"+key+"<input type='text' value='"+data[key]+"'></li>")
 }
 
 $("#oct_div").svg({
