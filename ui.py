@@ -1,5 +1,5 @@
 import Tkinter as tk
-from Tkinter import Canvas, Frame, Button, Tk, LEFT, RIGHT, BOTTOM, TOP
+from Tkinter import Canvas, Frame, Button, Tk, LEFT, RIGHT, BOTTOM, TOP, Label, StringVar, Radiobutton,W
 
 class main(Frame):
 	def __init__(self,master):
@@ -13,7 +13,17 @@ class main(Frame):
 				fg="red", command=root_frame.quit)
 		self.button.pack(side=TOP)
 
+		MODES = [("3D","rectangle"),("2D","line")]
+		self.mode = StringVar()
+		self.mode.set("line")
+		for text,mode in MODES:
+			b = Radiobutton(right_frame,text=text,variable=self.mode,value=mode)
+			b.pack(anchor=W)
+
 		self.camera_canvas = Canvas(right_frame,bg="red")
+		self.camera_canvas.bind("<ButtonPress-1>", self.pressed)
+		self.camera_canvas.bind("<B1-Motion>", self.moved)
+		self.camera_canvas.bind("<ButtonRelease-1>", self.released)
 		self.camera_canvas.pack(side=BOTTOM)
 
 		self.plot_canvas = Canvas(root_frame,width=100,bg="blue")
@@ -21,6 +31,19 @@ class main(Frame):
 
 		self.tomogram_canvas = Canvas(root_frame,bg="black")
 		self.tomogram_canvas.pack(side=LEFT)
+
+	def pressed(self,event):
+		self.start_pos = (event.x,event.y)
+
+	def moved(self,event):
+		self.camera_canvas.delete(tk.ALL)
+		coordinates = self.start_pos + (event.x,event.y)
+		selector = {	"line":self.camera_canvas.create_line,
+				"rectangle":self.camera_canvas.create_rectangle}[self.mode.get()]
+		selector(*coordinates)
+
+	def released(self,event):
+		pass
 
 
 
