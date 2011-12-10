@@ -1,10 +1,19 @@
 import Tkinter as tk
-from Tkinter import Canvas, Frame, Button, Tk, LEFT, RIGHT, BOTTOM, TOP, Label, StringVar, Radiobutton,W
+from Tkinter import Canvas, Frame, Button, Tk, LEFT, RIGHT, BOTTOM, TOP, Label, StringVar, Radiobutton,W,Menu
 
 class main(Frame):
 	def __init__(self,master):
 		root_frame = Frame(master)
 		root_frame.pack()
+
+		menubar = Menu(master)
+
+		menufile = Menu(menubar,tearoff=0)
+		menufile.add_command(label="Open")
+		menufile.add_command(label="Save")
+		menubar.add_cascade(label="File",menu=menufile)
+
+		master.config(menu=menubar)
 
 		right_frame = Frame(root_frame,bg="white")
 		right_frame.pack(side=RIGHT)
@@ -17,7 +26,8 @@ class main(Frame):
 		self.mode = StringVar()
 		self.mode.set("line")
 		for text,mode in MODES:
-			b = Radiobutton(right_frame,text=text,variable=self.mode,value=mode)
+			b = Radiobutton(right_frame,text=text,
+					variable=self.mode,value=mode)
 			b.pack(anchor=W)
 
 		self.camera_canvas = Canvas(right_frame,bg="red")
@@ -44,6 +54,16 @@ class main(Frame):
 
 	def released(self,event):
 		pass
+
+	def plot(points):
+		ax = self.plot_canvas
+		p2 = points.roll(1)
+		a = zip(points,p2)
+		a.pop()
+		lines = [(p[0],y1,p[1],y1+1) for p in a]
+		create_line = lambda coordinate:ax.create_line(*coordinate)
+		map(create_line,lines)
+
 
 
 
