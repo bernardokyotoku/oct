@@ -2,7 +2,7 @@
  
 import sys
 from PyQt4 import QtGui 
-from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen
+from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup
 from PyQt4.QtCore import QLine
 
 class CameraScene(QGraphicsScene):
@@ -11,7 +11,7 @@ class CameraScene(QGraphicsScene):
 		self.start_point = None
 		self.x1 = None
 		self.y1 = None
-		self.selection_type = 1
+		self.selection_type = '2D'
 		self.setSceneRect(0,0,100,100)
 
 	def mousePressEvent(self,event):
@@ -23,14 +23,15 @@ class CameraScene(QGraphicsScene):
 		map(self.removeItem,self.items())
 		x2 = event.scenePos().x()
 		y2 = event.scenePos().y()
-		def rect(x1,y1,x2,y2):
-			width = x2-x1	
-			height = y2-y1
-			x = (x2,-width) if width < 0 else (x1,width)
-			y = (y2,-height) if height < 0 else (y1,height)
-			self.addRect(x[0],y[0],x[1],y[1])
-		select = [self.addLine,rect][self.selection_type]
+		select = {'2D':self.addLine,'3D':self.addRectCoor}[self.selection_type]
 		select(self.x1,self.y1,x2,y2)
+
+	def addRectCoor(self,x1,y1,x2,y2):
+		width = x2-x1	
+		height = y2-y1
+		x = (x2,-width) if width < 0 else (x1,width)
+		y = (y2,-height) if height < 0 else (y1,height)
+		self.addRect(x[0],y[0],x[1],y[1])
 
 class Example(QMainWindow):
 	def __init__(self):
@@ -53,11 +54,24 @@ class Example(QMainWindow):
 		textEdit = QTextEdit()
 		buttonQuit = QPushButton('hello')
 		self.camera_view = QGraphicsView(CameraScene())
+		
+		buttons_scan_type = [QRadioButton("2D"),QRadioButton("3D")]
+		pane_scan_type = QGroupBox()
+		group_scan_type = QButtonGroup()
+		map(group_scan_type.addButton,buttons_scan_type)
+
+		group_scan_type.buttonClicked.connect(self.f)
+		layout_scan_type = QGridLayout()
+		layout_scan_type.addWidget(buttons_scan_type[0],0,0)
+		layout_scan_type.addWidget(buttons_scan_type[1],0,1)
+		pane_scan_type.setLayout(layout_scan_type)
+		buttons_scan_type[0].click()
 
 		pane_right = QWidget()
 		grid_right = QGridLayout()
 		grid_right.addWidget(buttonQuit,0,0)
-		grid_right.addWidget(self.camera_view,1,0)
+		grid_right.addWidget(pane_scan_type,1,0)
+		grid_right.addWidget(self.camera_view,2,0)
 		pane_right.setLayout(grid_right)
 
 		grid = QGridLayout()
@@ -81,6 +95,11 @@ class Example(QMainWindow):
 		self.statusBar().showMessage("Ready")
 		self.setWindowTitle("OCT")
 		self.show()
+
+	def f(self,event):
+		t = str(event.sender().checkedButton().text())
+		sys.stderr.write(t)
+		self.camera_view.scene().selection_type = t
 
 		
 
