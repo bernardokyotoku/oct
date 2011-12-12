@@ -9,7 +9,7 @@ def parse():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.description = "Raw data simulator."
-	parser.add_argument('-o',dest='out_file', default='raw_data')
+	parser.add_argument('-o',dest='out_file', default='raw_data.jpg')
 	parser.add_argument('-count',dest='count', default=1000000000)
 	parser.add_argument('-height',dest='height', default=240)
 	parser.add_argument('-width',dest='width', default=320)
@@ -27,8 +27,14 @@ line = lambda x:gauss(np.linspace(0,10,arg.width),5,1)*np.sin(0.1*x*np.linspace(
 image = lambda y: np.vstack([line(x) for x in 2*np.sin(y + 2*np.linspace(0,2,arg.height)) + 3])
 i=0
 print arg.out_file
+
 def scale(image,factor):
 	return np.float32(image)*factor
+
+def getType(filename):
+	return filename.split('.')[1]
+
+filetype = getType(arg.out_file)
 
 while True:
 	fd = open(arg.out_file,'w',0)
@@ -42,7 +48,7 @@ while True:
 		#plt.imshow(here)
 		#plt.show()
 		try:
-			here.save(fd,'jpeg')
+			here.save(fd,filetype)
 		except Exception, e:
 			print e 
 			break
