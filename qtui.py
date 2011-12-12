@@ -41,15 +41,12 @@ class OCT(QMainWindow):
 	def initUI(self):
 		container = QWidget()
 		self.setCentralWidget(container)
-		exitAction = QAction('Exit',self)
-		exitAction.setShortcut('Ctrl+Q')
-		exitAction.setStatusTip('Exit application')
-		exitAction.triggered.connect(qApp.quit)
+		self.exitAction = QAction('Exit',self)
+		self.exitAction.setShortcut('Ctrl+Q')
+		self.exitAction.setStatusTip('Exit application')
+		self.exitAction.triggered.connect(qApp.quit)
 
-		menuBar = self.menuBar()
-		menuFile = menuBar.addMenu('File')
-		menuEdit = menuBar.addMenu('Edit')
-		menuFile.addAction(exitAction)
+		self.makeMenus()
 
 		pane_right = self.makeRightPane()
 		pane_left = self.makeLeftPane()
@@ -64,6 +61,12 @@ class OCT(QMainWindow):
 		self.statusBar().showMessage("Ready")
 		self.setWindowTitle("OCT")
 		self.show()
+
+	def makeMenus(self):
+		menuBar = self.menuBar()
+		menuFile = menuBar.addMenu('File')
+		menuEdit = menuBar.addMenu('Edit')
+		menuFile.addAction(self.exitAction)
 
 	def makeRightPane(self):
 		buttonQuit = QPushButton('hello')
