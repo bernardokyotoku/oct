@@ -27,17 +27,20 @@ line = lambda x:gauss(np.linspace(0,10,arg.width),5,1)*np.sin(0.1*x*np.linspace(
 image = lambda y: np.vstack([line(x) for x in 2*np.sin(y + 2*np.linspace(0,2,arg.height)) + 3])
 i=0
 print arg.out_file
+def scale(image,factor):
+	return np.float32(image)*factor
+
 while True:
 	fd = open(arg.out_file,'w',0)
 	while True:
 		i += 1
 		print i
-		m = 255*np.float32(image(i*0.1))
+		m = scale(image(i*0.1),factor=255)
 		here = Image.frombuffer(mode = 'F',size=m.T.shape, data=m.data)
 		here = here.convert('L')
-#		plt.figure()
-#		plt.imshow(here)
-#		plt.show()
+		#plt.figure()
+		#plt.imshow(here)
+		#plt.show()
 		try:
 			here.save(fd,'jpeg')
 		except Exception, e:
