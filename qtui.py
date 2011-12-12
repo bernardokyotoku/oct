@@ -33,9 +33,9 @@ class CameraScene(QGraphicsScene):
 		y = (y2,-height) if height < 0 else (y1,height)
 		self.addRect(x[0],y[0],x[1],y[1])
 
-class Example(QMainWindow):
+class OCT(QMainWindow):
 	def __init__(self):
-		super(Example, self).__init__()
+		super(OCT, self).__init__()
 		self.initUI()
 
 	def initUI(self):
@@ -51,10 +51,46 @@ class Example(QMainWindow):
 		menuEdit = menuBar.addMenu('Edit')
 		menuFile.addAction(exitAction)
 
-		textEdit = QTextEdit()
+		pane_right = self.makeRightPane()
+		pane_left = self.makeLeftPane()
+
+		grid = QGridLayout()
+		grid.addWidget(pane_left,0,0)
+		grid.addWidget(pane_right,0,1)
+		grid.setColumnStretch(0,2)
+		container.setLayout(grid)
+
+		self.setGeometry(300,300,500,360)
+		self.statusBar().showMessage("Ready")
+		self.setWindowTitle("OCT")
+		self.show()
+
+	def makeRightPane(self):
 		buttonQuit = QPushButton('hello')
 		self.camera_view = QGraphicsView(CameraScene())
-		
+		pane_scan_type = self.makeScanTypeButtons()
+
+		pane_right = QWidget()
+		grid_right = QGridLayout()
+		grid_right.addWidget(buttonQuit,0,0)
+		grid_right.addWidget(pane_scan_type,1,0)
+		grid_right.addWidget(self.camera_view,2,0)
+		pane_right.setLayout(grid_right)
+		return pane_right
+
+	def makeLeftPane(self):
+		self.tomography_view = QGraphicsView(QGraphicsScene())
+		self.plot_view = QGraphicsView(QGraphicsScene())
+
+		pane_left = QWidget()
+		grid_left = QGridLayout()
+		grid_left.addWidget(self.plot_view,0,0)
+		grid_left.addWidget(self.tomography_view,0,1)
+		grid_left.setColumnStretch(1,2)
+		pane_left.setLayout(grid_left)
+		return pane_left
+
+	def makeScanTypeButtons(self):
 		buttons_scan_type = [QRadioButton("2D"),QRadioButton("3D")]
 		pane_scan_type = QGroupBox()
 		group_scan_type = QButtonGroup()
@@ -66,35 +102,7 @@ class Example(QMainWindow):
 		layout_scan_type.addWidget(buttons_scan_type[1],0,1)
 		pane_scan_type.setLayout(layout_scan_type)
 		buttons_scan_type[0].click()
-
-		pane_right = QWidget()
-		grid_right = QGridLayout()
-		grid_right.addWidget(buttonQuit,0,0)
-		grid_right.addWidget(pane_scan_type,1,0)
-		grid_right.addWidget(self.camera_view,2,0)
-		pane_right.setLayout(grid_right)
-
-		grid = QGridLayout()
-		grid.addWidget(textEdit,0,0)
-		grid.addWidget(pane_right,0,1)
-		container.setLayout(grid)
-
-#		scene = QGraphicsScene()
-#		scene.addLine(0,0,10,10)
-#		self.camera_view.setScene(scene)
-
-		self.setGeometry(300,300,250,150)
-		self.show()
-
-		def mousePress(event):
-			self.statusBar().showMessage(str(event.pos()))
-		
-		#self.camera_view.mousePressEvent = mousePress
-
-		self.setGeometry(300,300,250,150)
-		self.statusBar().showMessage("Ready")
-		self.setWindowTitle("OCT")
-		self.show()
+		return pane_scan_type
 
 	def f(self,event):
 		t = str(event.sender().checkedButton().text())
@@ -105,7 +113,7 @@ class Example(QMainWindow):
 
 def main():
 	app = QtGui.QApplication(sys.argv)
-	ex = Example()
+	ex = OCT()
 
 	sys.exit(app.exec_())
 
