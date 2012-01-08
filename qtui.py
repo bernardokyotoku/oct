@@ -1,9 +1,8 @@
 #!/usr/bin/python
- 
-import sys
 from PyQt4 import QtGui 
-from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup
-from PyQt4.QtCore import QLine
+from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap
+from PyQt4.QtCore import QLine, QString
+import sys
 
 class CameraScene(QGraphicsScene):
 	def __init__(self):
@@ -85,6 +84,7 @@ class OCT(QMainWindow):
 		self.tomography_view = QGraphicsView(QGraphicsScene())
 		self.plot_view = QGraphicsView(QGraphicsScene())
 
+
 		pane_left = QWidget()
 		grid_left = QGridLayout()
 		grid_left.addWidget(self.plot_view,0,0)
@@ -112,11 +112,19 @@ class OCT(QMainWindow):
 		sys.stderr.write(t)
 		self.camera_view.scene().selection_type = t
 
+def getZoom(self):
+	def zoom(event):
+		self.scale(1.2,1.2) if event.delta()>0 else self.scale(0.8,0.8)
+	return zoom
+
 		
 
 def main():
 	app = QtGui.QApplication(sys.argv)
 	ex = OCT()
+	ex.tomography_view.scene().addPixmap(QPixmap("CNH.jpg"))
+	tomography = ex.tomography_view
+	tomography.wheelEvent = getZoom(tomography)
 
 	sys.exit(app.exec_())
 
