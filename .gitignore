@@ -9,3 +9,6 @@
 *.gz
 *.mjpeg
 *.pdf
+*.jpg
+*.raw
+*.bmp
