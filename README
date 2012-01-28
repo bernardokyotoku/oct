@@ -7,3 +7,7 @@ Credits
 
 http://www.bluishcoder.co.nz/2007/08/svg-video-demo.html
 Chris Double
+
+TODO
+- feed DCU to camera
+done - Check gstreamer sink as qt element

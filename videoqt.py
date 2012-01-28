@@ -1,4 +1,7 @@
 #!/usr/bin/python
+# Main reference
+# http://stackoverflow.com/questions/2398958/python-qt-gstreamer
+import gst
 from PyQt4 import QtGui 
 from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap
 from PyQt4.QtCore import QLine, QString
@@ -83,13 +86,18 @@ class OCT(QMainWindow):
 	def setUpGst(self):
 		self.player = gst.Pipeline("player")
 		source = gst.element_factory_make("v4l2src", "vsource")
-		sink = gst.element_factory_make("autovideosink", "outsink")
+		sink = gst.element_factory_make("xvimagesink", "sink")
+
+		fvidscale_cap = gst.element_factory_make("capsfilter", "fvidscale_cap")
+		fvidscale = gst.element_factory_make("videoscale", "fvidscale")
+		#scaler = gst.element_factory_make("videoscale", "vscale")
+		caps = gst.caps_from_string('video/x-raw-yuv, width=%d, height=%d'%(self.wd.width(),self.wd.height()))
+		fvidscale_cap.set_property('caps', caps)
 		source.set_property("device", "/dev/video0")
-		scaler = gst.element_factory_make("videoscale", "vscale")
 		self.window_id = None
 
-		self.player.add(source, scaler, sink)
-		gst.element_link_many(source, scaler, sink)
+		self.player.add(source, fvidscale, fvidscale_cap, sink)
+		gst.element_link_many(source, fvidscale, fvidscale_cap, sink)
 		bus = self.player.get_bus()
 		bus.add_signal_watch()
 		bus.enable_sync_message_emission()
@@ -100,6 +108,7 @@ class OCT(QMainWindow):
 		t = message.type
 		if t == gst.MESSAGE_EOS:
 			self.player.set_state(gst.STATE_NULL)
+			print "end of message"
 		elif t == gst.MESSAGE_ERROR:
 			err, debug = message.parse_error()
 			print "Error: %s" % err, debug
@@ -113,20 +122,24 @@ class OCT(QMainWindow):
 			win_id = self.windowId
 			assert win_id
 			imagesink = message.src
-			imagesink.set_property("force-aspect-ratio", True)
+			#imagesink.set_property("force-aspect-ratio", True)
 			imagesink.set_xwindow_id(win_id)
 
 	def startPrev(self):
 		self.player.set_state(gst.STATE_PLAYING)
 		print "should be playing"
+		raw_input()
+
+	def pausePrev(self):
+		self.player.set_state(gst.STATE_NULL)
 
 	def makeLeftPane(self):
 		self.tomography_view = QGraphicsView(QGraphicsScene())
 		self.plot_view = QGraphicsView(QGraphicsScene())
-		wd = QWidget()
-		self.WindowId = wd.WinId()
-		self.tomography_view.scene().addWidget(wd)
-
+		self.wd = QWidget()
+		self.windowId = self.wd.winId()
+		print self.windowId
+		self.tomography_view.scene().addWidget(self.wd)
 
 		pane_left = QWidget()
 		grid_left = QGridLayout()
@@ -152,7 +165,7 @@ class OCT(QMainWindow):
 
 	def f(self,event):
 		t = str(event.sender().checkedButton().text())
-		sys.stderr.write(t)
+		#sys.stderr.write(t)
 		self.camera_view.scene().selection_type = t
 
 def getZoom(self):
@@ -166,12 +179,20 @@ def main():
 	app = QtGui.QApplication(sys.argv)
 	ex = OCT()
 	#ex.tomography_view.scene().addPixmap(QPixmap("CNH.jpg"))
-	ex.tomography_view.scene().addWidget(wd)
-	tomography = ex.tomography_view
-	tomography.wheelEvent = getZoom(tomography)
+	ex.setUpGst()
+	ex.startPrev()
+
+#	tomography = ex.tomography_view
+#	tomography.wheelEvent = getZoom(tomography)
 
 	sys.exit(app.exec_())
 
 if __name__ == "__main__":
-	main()
-   
+	app = QtGui.QApplication(sys.argv)
+	ex = OCT()
+	#ex.tomography_view.scene().addPixmap(QPixmap("CNH.jpg"))
+	tomography = ex.tomography_view
+	ex.setUpGst()
+	tomography.wheelEvent = getZoom(tomography)
+	ex.startPrev()
+	sys.exit(app.exec_())

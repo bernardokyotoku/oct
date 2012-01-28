@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
-from cPickle import dump, HIGHEST_PROTOCOL
+import cPickle
 from time import sleep
 import Image
 
@@ -30,37 +31,39 @@ def matrix(phase):
 
 print arg.out_file
 
-def scale(image,factor):
+def amplify(image,factor):
 	return np.float32(image)*factor
 
 def getType(filename):
 	return filename.split('.')[1].upper()
 
-filetype = getType(arg.out_file)
+#filetype = getType(arg.out_file)
 def main():
 	i = 0
-	unbuffered = 0
-	fd = open(arg.out_file,'w+b',unbuffered)
-	while arg.n:
+	fd = open(arg.out_file,'w',0)
+	pickler = cPickle.Pickler(fd,cPickle.HIGHEST_PROTOCOL)
+	while True:
 		i += 1
 		moving_factor = 0.1
-		print "Creating image ", i, "."
-		m = scale(matrix(i*moving_factor),factor=255)
-		m = np.uint8(m)
-		mode = "L"
-		size = m.T.shape
-		data = m.data
-		image = Image.frombuffer(mode,size, data,"raw",mode,0,1)
+		print "Creating image", i, "."
+		#m = amplify(matrix(i*moving_factor),factor=2*16-1)
+		m = matrix(i*moving_factor)
+		#m = np.uint16(m)
+		#mode = "L"
+		#size = m.T.shape
+		#data = m.data
+		#image = Image.frombuffer(mode,size, data,"raw",mode,0,1)
 		#plt.figure()
-		#plt.imshow(image)
+		#plt.imshow(m)
 		#plt.show()
 		try:
-			image.save(fd,filetype)
+			pickler.dump(m)
+		#	image.save(fd,filetype)
 		except Exception, e:
 			print "Error", e.message
 			break
 		#dump(image(t),fd)
-		sleep(0.05)
+		sleep(1)
 		if (i >= int(arg.count)):
 			print "exit"
 			return True
@@ -71,4 +74,4 @@ def main():
 if __name__ == "__main__":
 	exit = False
 	while not exit or arg.n:
-		exit = main()
+		main()
