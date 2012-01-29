@@ -5,6 +5,8 @@ pygst.require("0.10")
 import gst
 import numpy as np
 
+
+gobject.threads_init()
 def needdata( src, length):
 	bytes = np.int16(np.random.rand(length/2)*30000).data
 	src.emit('push-buffer', gst.Buffer(bytes))
@@ -18,10 +20,6 @@ source.connect('need-data', needdata)
 colorspace = gst.element_factory_make('ffmpegcolorspace')
 enc = gst.element_factory_make('theoraenc')
 mux = gst.element_factory_make('oggmux')
-shout = gst.element_factory_make('shout2send')
-shout.set_property("ip","localhost")
-shout.set_property("password","hackme")
-shout.set_property("mount","/stream")
 caps = gst.Caps("video/x-raw-yuv,width=320,height=240,framerate=(fraction)10/1,format=(fourcc)I420")
 enc.caps = caps
 videosink = gst.element_factory_make('xvimagesink')
@@ -29,7 +27,8 @@ videosink.caps = caps
 
 player.add(source, colorspace, videosink)
 gst.element_link_many(source, colorspace, videosink)
+
+loop = gobject.MainLoop(is_running=True)
 player.set_state(gst.STATE_PLAYING)
+loop.run()
 
-
-gtk.gdk.threads_init()
