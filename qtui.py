@@ -114,16 +114,26 @@ class OCT(QMainWindow):
 
     def makeRightPane(self):
         buttonQuit = QPushButton('hello')
+        button_start = QPushButton('Start')
         self.camera_view = QGraphicsView(CameraScene())
         pane_scan_type = self.makeScanTypeButtons()
 
         pane_right = QWidget()
         grid_right = QGridLayout()
         grid_right.addWidget(buttonQuit,0,0)
-        grid_right.addWidget(pane_scan_type,1,0)
-        grid_right.addWidget(self.camera_view,2,0)
+        grid_right.addWidget(button_start,1,0)
+        grid_right.addWidget(pane_scan_type,2,0)
+        grid_right.addWidget(self.camera_view,3,0)
         pane_right.setLayout(grid_right)
         return pane_right
+
+    def start_acquisition(self):
+        from subprocess import Popen
+        #self.acquisition = Popen(["acquirer.py","--continuous"])
+        self.acquisition = Popen(["python","image_generator.py","-q"])
+
+    def stop_acquisition(self):
+        self.acquisition.terminate()
 
     def makeLeftPane(self):
         self.tomography_view = QWidget()
