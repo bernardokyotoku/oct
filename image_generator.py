@@ -9,7 +9,7 @@ def parse():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.description = "Raw data simulator."
-	parser.add_argument('-o',dest='out_file', default='raw_data.bmp')
+	parser.add_argument('-o',dest='out_file', default='raw_data')
 	parser.add_argument('--count',dest='count', default=1000000000)
 	parser.add_argument('--height',dest='height', default=240)
 	parser.add_argument('--width',dest='width', default=320)

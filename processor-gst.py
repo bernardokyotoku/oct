@@ -35,9 +35,8 @@ _log.setLevel(logging.DEBUG)
 
 
 
-class VideoPlayer(object):
+class Processor(object):
 	'''
-	Simple video player
 	'''
 
 	def __init__(self, in_file, out_file, **kwargs):
@@ -78,12 +77,12 @@ class VideoPlayer(object):
 	def setup_gstreamer(self):
 		self.pipeline = gst.Pipeline('pipeline')
 		source = gst.element_factory_make('appsrc', 'source')
-		caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=320, height=240, framerate=(fraction)1/1')
+		caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=320, height=240, framerate=(fraction)1/10')
 		source.set_property('caps', caps)
 		source.set_property('blocksize', 320*240*1)
 		source.connect('need-data', self.needdata)
 		colorspace = gst.element_factory_make('ffmpegcolorspace')
-		caps = gst.Caps('video/x-raw-yuv, width=320, height=240, framerate=(fraction)1/1, format=(fourcc)Y8')
+		caps = gst.Caps('video/x-raw-yuv, width=320, height=240, framerate=(fraction)1/10, format=(fourcc)Y8')
 		videosink = gst.element_factory_make('xvimagesink')
 		videosink.caps = caps
 		self.pipeline.add(source, colorspace, videosink)
@@ -111,5 +110,5 @@ if __name__ == '__main__':
 	config = parse_config()
 	arg = parse_arguments()
 	logging.basicConfig(filename='oct.log',level=config['log'])
-	player = VideoPlayer(arg.in_file,arg.out_file)
+	player = Processor(arg.in_file,arg.out_file)
 	player.run()
