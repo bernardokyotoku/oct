@@ -5,7 +5,7 @@ from PyQt4.QtGui import QMainWindow, QWidget, QApplication
 import sys
 
 class Video(QMainWindow):
-	    def __init__(self):
+    def __init__(self):
         QMainWindow.__init__(self)
         container = QWidget()
         self.setCentralWidget(container)
