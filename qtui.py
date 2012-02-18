@@ -181,6 +181,7 @@ def getZoom(self):
 
 
 if __name__ == "__main__":
+    processor = Popen(["python", "processor.py"])
     gobject.threads_init()
     app = QtGui.QApplication(sys.argv)
     ex = OCT()
