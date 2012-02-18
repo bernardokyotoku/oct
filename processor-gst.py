@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Copyright (c) 2011 Joar Wandborg <http://wandborg.se>
 
