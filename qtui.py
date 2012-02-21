@@ -6,6 +6,7 @@ from PyQt4 import QtGui
 from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap
 from PyQt4.QtCore import QLine, QString
 import sys
+from subprocess import Popen
 
 class CameraScene(QGraphicsScene):
     def __init__(self):
@@ -38,6 +39,7 @@ class CameraScene(QGraphicsScene):
 class OCT(QMainWindow):
     def __init__(self):
         super(OCT, self).__init__()
+        self.out_file = "gst_pipe"
         self.initUI()
 
     def initUI(self):
@@ -64,19 +66,24 @@ class OCT(QMainWindow):
         self.setWindowTitle("OCT")
         self.show()
 
-    def setUpGst(self):
-        self.player = gst.Pipeline("player")
-        source = gst.element_factory_make("v4l2src", "vsource")
+    def setup_gst(self):
+        self.pipeline = gst.Pipeline("pipeline")
+        if self.out_file is not None:
+            source = gst.element_factory_make("filesrc")
+            source.set_property("location",self.out_file)
+        else:
+            source = gst.element_factory_make("v4l2src", "vsource")
+            source.set_property("device", "/dev/video0")
         sink = gst.element_factory_make("xvimagesink", "sink")
         fvidscale_cap = gst.element_factory_make("capsfilter", "fvidscale_cap")
         fvidscale = gst.element_factory_make("videoscale", "fvidscale")
         caps = gst.caps_from_string('video/x-raw-yuv')
         fvidscale_cap.set_property('caps', caps)
-        source.set_property("device", "/dev/video0")
+        colorspace = gst.element_factory_make('ffmpegcolorspace')
 
-        self.player.add(source, fvidscale, fvidscale_cap, sink)
-        gst.element_link_many(source,fvidscale, fvidscale_cap, sink)
-        bus = self.player.get_bus()
+        self.pipeline.add(source, colorspace, sink)
+        gst.element_link_many(source, colorspace, sink)
+        bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.enable_sync_message_emission()
         bus.connect("message", self.on_message)
@@ -85,12 +92,12 @@ class OCT(QMainWindow):
     def on_message(self, bus, message):
         t = message.type
         if t == gst.MESSAGE_EOS:
-            self.player.set_state(gst.STATE_NULL)
+            self.pipeline.set_state(gst.STATE_NULL)
             print "end of message"
         elif t == gst.MESSAGE_ERROR:
             err, debug = message.parse_error()
             print "Error: %s" % err, debug
-            self.player.set_state(gst.STATE_NULL)
+            self.pipeline.set_state(gst.STATE_NULL)
 
     def on_sync_message(self, bus, message):
         if message.structure is None:
@@ -103,7 +110,7 @@ class OCT(QMainWindow):
             imagesink.set_xwindow_id(win_id)
 
     def startPrev(self):
-        self.player.set_state(gst.STATE_PLAYING)
+        self.pipeline.set_state(gst.STATE_PLAYING)
         print "should be playing"
 
     def makeMenus(self):
@@ -173,18 +180,16 @@ def getZoom(self):
         self.scale(1.2,1.2) if event.delta()>0 else self.scale(0.8,0.8)
     return zoom
 
-        
-
 #    ex.tomography_view.scene().addPixmap(QPixmap("CNH.jpg"))
 #    tomography = ex.tomography_view
 #    tomography.wheelEvent = getZoom(tomography)
 
-
 if __name__ == "__main__":
-    processor = Popen(["python", "processor.py"])
+    #acquisition = Popen(["python","image_generator.py",])
+    processor = Popen(["python", "processor-gst.py", "-o", "gst_pipe"])
     gobject.threads_init()
     app = QtGui.QApplication(sys.argv)
     ex = OCT()
-    ex.setUpGst()
+    ex.setup_gst()
     ex.startPrev()
     sys.exit(app.exec_())
