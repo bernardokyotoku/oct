@@ -39,7 +39,7 @@ class CameraScene(QGraphicsScene):
 class OCT(QMainWindow):
     def __init__(self):
         super(OCT, self).__init__()
-        self.out_file = "gst_pipe"
+        self.out_file = "a.avi"
         self.initUI()
 
     def initUI(self):
@@ -71,23 +71,29 @@ class OCT(QMainWindow):
         if self.out_file is not None:
             source = gst.element_factory_make("filesrc")
             source.set_property("location",self.out_file)
+            demuxer = gst.element_factory_make("avidemux", name = 'demux')
+            demuxer.connect("pad-added", self.demuxer_callback)
+            self.queuev = gst.element_factory_make("queue", "queuev")
         else:
             source = gst.element_factory_make("v4l2src", "vsource")
             source.set_property("device", "/dev/video0")
         sink = gst.element_factory_make("xvimagesink", "sink")
-        fvidscale_cap = gst.element_factory_make("capsfilter", "fvidscale_cap")
-        fvidscale = gst.element_factory_make("videoscale", "fvidscale")
-        caps = gst.caps_from_string('video/x-raw-yuv')
-        fvidscale_cap.set_property('caps', caps)
-        colorspace = gst.element_factory_make('ffmpegcolorspace')
 
-        self.pipeline.add(source, colorspace, sink)
-        gst.element_link_many(source, colorspace, sink)
+        pipeline_args = [source, self.queuev, demuxer, sink]
+        self.pipeline.add(*pipeline_args)
+        gst.element_link_many(source, demuxer)
+        gst.element_link_many(self.queuev, sink)
+
         bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.enable_sync_message_emission()
         bus.connect("message", self.on_message)
         bus.connect("sync-message::element", self.on_sync_message)
+
+    def demuxer_callback(self, demuxer, pad):
+        if pad.get_property("template").name_template == "video_%02d":
+            queuev_pad = self.queuev.get_pad("sink")
+            pad.link(queuev_pad)
 
     def on_message(self, bus, message):
         t = message.type
@@ -109,7 +115,7 @@ class OCT(QMainWindow):
             imagesink = message.src
             imagesink.set_xwindow_id(win_id)
 
-    def startPrev(self):
+    def start_prev(self):
         self.pipeline.set_state(gst.STATE_PLAYING)
         print "should be playing"
 
@@ -186,10 +192,10 @@ def getZoom(self):
 
 if __name__ == "__main__":
     #acquisition = Popen(["python","image_generator.py",])
-    processor = Popen(["python", "processor-gst.py", "-o", "gst_pipe"])
     gobject.threads_init()
+    #processor = Popen(["python", "processor-gst.py", "-o gst_pipe"])
     app = QtGui.QApplication(sys.argv)
     ex = OCT()
     ex.setup_gst()
-    ex.startPrev()
+    ex.start_prev()
     sys.exit(app.exec_())
