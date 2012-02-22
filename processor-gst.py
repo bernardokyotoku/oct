@@ -34,9 +34,7 @@ class Processor(object):
     def __init__(self, args, **kwargs):
         self.loop = gobject.MainLoop()
         self.args = args
-        self.pickle = cPickle.Unpickler(open(args.in_file))
-        if kwargs.get('src'):
-            self.source_file = kwargs.get('src')
+        self.unipickler = cPickle.Unpickler(open(args.in_file))
         self.setup_gstreamer()
 
     def run(self):
@@ -53,9 +51,9 @@ class Processor(object):
 
     def needdata(self, src, length):
         try:
-            data = self.pickle.load()
-        except Exception:
-            sys.stderr.write("could not pickle")
+            data = self.unipickler.load()
+        except Exception, e:
+            sys.stderr.write(str(e))
             return
         parameters = {"brightness":-00,"contrast":8}
         #data = np.linspace(0,240,320*240).reshape((320,240))
@@ -68,28 +66,39 @@ class Processor(object):
 
     def setup_gstreamer(self):
         self.pipeline = gst.Pipeline('pipeline')
-        source = gst.element_factory_make('appsrc', 'source')
-        caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=320, height=240, framerate=(fraction)1/10')
-        source.set_property('caps', caps)
-        source.set_property('blocksize', 320*240*1)
-        source.connect('need-data', self.needdata)
-        colorspace = gst.element_factory_make('ffmpegcolorspace')
-        caps = gst.Caps('video/x-raw-yuv, width=320, height=240, framerate=(fraction)1/10, format=(fourcc)Y8')
+        vsource = gst.element_factory_make('appsrc', 'source')
+        caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=320, height=240, framerate=(fraction)5/1')
+        vsource.set_property('caps', caps)
+        vsource.set_property('blocksize', 320*240*1)
+        vsource.connect('need-data', self.needdata)
+        filter = gst.element_factory_make('capsfilter')
+        colorspace = gst.element_factory_make("ffmpegcolorspace")
+        caps = gst.Caps('video/x-raw-yuv,format=(fourcc)I420,width=320,height=240,framerate=(fraction)5/1')
+        filter.set_property('caps', caps)
+        queuev = gst.element_factory_make("queue", "queuev")
         if self.args.out_file is not None:
+            asource = gst.element_factory_make("audiotestsrc", 'asource')
+            conv = gst.element_factory_make("audioconvert") 
+            conv.caps = gst.Caps('audio/x-raw-int,rate=44100,channels=2') 
+            queuea = gst.element_factory_make("queue","queuea")
+            avimux = gst.element_factory_make("avimux")
             sink = gst.element_factory_make("filesink")
             sink.set_property("location",self.args.out_file)
+
+            self.pipeline.add(vsource,filter,colorspace,queuev,avimux,sink)
+            gst.element_link_many(vsource, colorspace, filter, queuev, avimux, )
+            gst.element_link_many(avimux, sink)
         else:
-            sink = gst.element_factory_make('xvimagesink')
-        sink.caps = caps
-        self.pipeline.add(source, colorspace, sink)
-        gst.element_link_many(source, colorspace, sink)
+            pipeline_args += [sink]
+            self.pipeline.add(*pipeline_args)
+            gst.element_link_many(*pipeline_args)
         return self.pipeline
 
 def parse_arguments():
     flags = ['daemon']
     parser = argparse.ArgumentParser()
     parser.description = 'OCT client.'
-    parser.add_argument('-i',dest='in_file', default=config['in_file'])
+    parser.add_argument('-i',dest='in_file', default = "raw_data" )
     parser.add_argument('-o',dest='out_file')
     for flag in flags:
         parser.add_argument('--' + flag,action='store_true',default=False) 

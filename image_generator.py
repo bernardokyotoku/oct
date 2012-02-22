@@ -63,7 +63,7 @@ def main():
 			print "Error", e.message
 			break
 		#dump(image(t),fd)
-		sleep(1)
+		sleep(.1)
 		if (i >= int(arg.count)):
 			print "exit"
 			return True
