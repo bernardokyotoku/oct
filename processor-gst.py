@@ -34,7 +34,7 @@ class Processor(object):
     def __init__(self, args, **kwargs):
         self.loop = gobject.MainLoop()
         self.args = args
-        self.unipickler = cPickle.Unpickler(open(args.in_file))
+        self.unipickler = cPickle.Unpickler(open(args.in_file,buffering=100000000))
         self.setup_gstreamer()
 
     def run(self):
@@ -67,13 +67,16 @@ class Processor(object):
     def setup_gstreamer(self):
         self.pipeline = gst.Pipeline('pipeline')
         vsource = gst.element_factory_make('appsrc', 'source')
-        caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=320, height=240, framerate=(fraction)5/1')
+        frame_rate = 7
+        height = 240
+        width = 320
+        caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=%d, height=%d, framerate=(fraction)%d/1'%(width,height,frame_rate))
         vsource.set_property('caps', caps)
-        vsource.set_property('blocksize', 320*240*1)
+        vsource.set_property('blocksize', width*height*1)
         vsource.connect('need-data', self.needdata)
         filter = gst.element_factory_make('capsfilter')
         colorspace = gst.element_factory_make("ffmpegcolorspace")
-        caps = gst.Caps('video/x-raw-yuv,format=(fourcc)I420,width=320,height=240,framerate=(fraction)5/1')
+        caps = gst.Caps('video/x-raw-yuv,format=(fourcc)I420,width=%d,height=%d,framerate=(fraction)%d/1'%(width,height,frame_rate))
         filter.set_property('caps', caps)
         queuev = gst.element_factory_make("queue", "queuev")
         if self.args.out_file is not None:
