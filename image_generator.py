@@ -16,14 +16,18 @@ def parse():
 	parser.add_argument('-',dest='stdout', action='store_true')
 	parser.add_argument('-d', action='store_true') 
 	parser.add_argument('-n', action='store_true') 
+    parser.add_argument('-R', action='store_true') #reciprocal
 	return parser.parse_args()
 arg = parse()
 
 def matrix(phase):
 	def gauss(x,x0,d):
 		return np.exp(-((x-x0)/d)**2)
-	def line(x):
-		carrier = np.sin(0.1*x*np.linspace(0,1000,arg.width))
+	def line(f):
+        t = np.linspace(10000,11000,arg.width)
+        if arg.R:
+            t = 10000000/t
+		carrier = np.sin(0.1*f*t)
 		envelope = gauss(np.linspace(0,10,arg.width),5,1)
 		return envelope*carrier
 	frequencies = 2*np.sin(phase + 2*np.linspace(0,2,arg.height)) + 3
