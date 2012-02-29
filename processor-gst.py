@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from configobj import ConfigObj
 from validate import Validator
-from function import transform,log_type,resample
+from acquirer import transform,log_type,resample
 import argparse
 import sys
 import cPickle
@@ -56,12 +56,7 @@ class Processor(object):
             sys.stderr.write(str(e))
             return
         parameters = {"brightness":-00,"contrast":8}
-        #data = np.linspace(0,240,320*240).reshape((320,240))
-    #    data = resample(data.T,config)
-        data = transform(data)
-        #data = 10*np.log(data)
-        data = self.renormalize(data, parameters)
-        data = np.ascontiguousarray(np.uint8(data))
+        data = process(data,parameters,config)
         src.emit('push-buffer', gst.Buffer(data.T.data))
 
     def setup_gstreamer(self):
@@ -96,6 +91,19 @@ class Processor(object):
             self.pipeline.add(*pipeline_args)
             gst.element_link_many(*pipeline_args)
         return self.pipeline
+
+def renormalize(data,parameters):
+    data = data + parameters['brightness']
+    data = data * parameters['contrast']
+    return data
+
+def process(data,parameters,config):
+#	data = resample(data.T,config)
+    data = transform(data)
+    #data = 10*np.log(data)
+    data = renormalize(data,parameters)
+    data = np.ascontiguousarray(np.uint8(data))
+    return data
 
 def parse_arguments():
     flags = ['daemon']
