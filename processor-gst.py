@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from configobj import ConfigObj
 from validate import Validator
-from acquirer import transform,log_type,resample
+from acquirer import log_type,resample
 import argparse
 import sys
 import cPickle
@@ -96,6 +96,9 @@ def renormalize(data,parameters):
     data = data + parameters['brightness']
     data = data * parameters['contrast']
     return data
+
+def transform(rsp_data):
+	return abs(np.fft.fft(rsp_data))
 
 def process(data,parameters,config):
 #	data = resample(data.T,config)
