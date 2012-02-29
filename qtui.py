@@ -39,7 +39,7 @@ class CameraScene(QGraphicsScene):
 class OCT(QMainWindow):
     def __init__(self):
         super(OCT, self).__init__()
-        self.out_file = "a.avi"
+        self.out_file = "gst_pipe"
         self.initUI()
 
     def initUI(self):
