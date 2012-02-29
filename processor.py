@@ -7,7 +7,7 @@ import cPickle
 import Image
 from configobj import ConfigObj
 from validate import Validator
-from function import transform,log_type,resample
+from acquirer import transform,log_type,resample
 
 def plot(image):
 	plt.imshow(image)

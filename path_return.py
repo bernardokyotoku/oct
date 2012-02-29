@@ -1,5 +1,5 @@
 import numpy as np
-from function import *
+from acquirer import *
 def return_path(x0,xf,y0,yf,t0,tf,r,N,numTomograms):
 	f = np.poly1d(poly3(x0,xf,t0,tf,r,r))
 	path = f(np.linspace(t0,tf,N))
