@@ -43,16 +43,7 @@ def matrix(phase):
         lmbd = x
         spect = np.cos(2*np.pi*L/lmbd)*gauss(lmbd,lmbd0,Dlmbd)
         return spect
-
-    def line(f):
-        carrier = np.sin(0.1*f*np.linspace(0,1000,arg.width))
-        envelope = gauss(np.linspace(0,10,arg.width),5,1)
-        return envelope*carrier
-
-    frequencies = 2*np.sin(phase + 2*np.linspace(0,2,arg.height)) + 3
     lengths = 500*np.sin(phase + 4*np.linspace(0,2,arg.height)) + 1000
-    lengths = lengths*0.5
-#    return np.vstack([line(f) for f in frequencies])
     return np.vstack([spectrum(L) for L in lengths])
 
 def main():
