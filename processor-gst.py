@@ -55,7 +55,7 @@ class Processor(object):
         except Exception, e:
             sys.stderr.write(str(e))
             return
-        parameters = {"brightness":-00,"contrast":8}
+        parameters = {"brightness":-00,"contrast":16}
         data = process(data,parameters,config)
         src.emit('push-buffer', gst.Buffer(data.T.data))
 
@@ -98,7 +98,7 @@ def renormalize(data,parameters):
     return data
 
 def transform(rsp_data):
-	return abs(np.fft.fft(rsp_data))
+	return np.abs(np.fft.fft(rsp_data))
 
 def process(data,parameters,config):
 #	data = resample(data.T,config)
