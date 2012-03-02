@@ -10,17 +10,16 @@ def parse():
     parser = argparse.ArgumentParser()
     parser.description = "Raw data simulator."
     parser.add_argument('-o',dest='out_file', default='raw_data')
-    parser.add_argument('--count',dest='count', default=1)
+    parser.add_argument('--count',dest='count', default=1, help='Number of frames to generate.')
     parser.add_argument('--height',dest='height', default=240)
     parser.add_argument('--width',dest='width', default=320)
-    parser.add_argument('--rate',dest='rate', default=1)
+    parser.add_argument('--rate',dest='rate', default=1, help='Rate frames are generated.')
     parser.add_argument('-',dest='stdout', action='store_true')
-    parser.add_argument('-p', action='store_true') # plot image
-    parser.add_argument('-a', action='store_true') # not pipe
+    parser.add_argument('-p', action='store_true', help='Plot image') 
+    parser.add_argument('-a', action='store_true', help='send to file')
     parser.add_argument('-d', action='store_true') 
     parser.add_argument('-n', action='store_true') 
-    parser.add_argument('-R', action='store_true') #reciprocal
-    parser.add_argument('-f', action='store_true') #reciprocal
+    parser.add_argument('-f', action='store_true', help='Spaced equally in frequency')
     return parser.parse_args()
 arg = parse()
 
