@@ -50,10 +50,10 @@ def matrix(phase):
         return envelope*carrier
 
     frequencies = 2*np.sin(phase + 2*np.linspace(0,2,arg.height)) + 3
-    lengths = 30*np.sin(phase + 4*np.linspace(0,2,arg.height)) + 60
+    lengths = 500*np.sin(phase + 4*np.linspace(0,2,arg.height)) + 1000
     lengths = lengths*0.5
-    return np.vstack([line(f) for f in frequencies])
-#    return np.vstack([spectrum(L) for L in lengths])
+#    return np.vstack([line(f) for f in frequencies])
+    return np.vstack([spectrum(L) for L in lengths])
 
 def main():
     if arg.a:

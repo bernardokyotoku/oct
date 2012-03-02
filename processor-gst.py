@@ -55,7 +55,7 @@ class Processor(object):
         except Exception, e:
             sys.stderr.write(str(e))
             return
-        parameters = {"brightness":-00,"contrast":16}
+        parameters = {"brightness":-00,"contrast":2}
         data = process(data,parameters,config)
         src.emit('push-buffer', gst.Buffer(data.T.data))
 
