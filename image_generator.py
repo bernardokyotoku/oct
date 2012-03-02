@@ -45,12 +45,10 @@ def matrix(phase):
         return spect
 
     def line(f):
-        t = np.linspace(10000,11000,arg.width)
-        if arg.R:
-            t = 10000000/t
-        carrier = np.sin(0.1*f*t)
+        carrier = np.sin(0.1*f*np.linspace(0,1000,arg.width))
         envelope = gauss(np.linspace(0,10,arg.width),5,1)
         return envelope*carrier
+
     frequencies = 2*np.sin(phase + 2*np.linspace(0,2,arg.height)) + 3
     lengths = 30*np.sin(phase + 4*np.linspace(0,2,arg.height)) + 60
     lengths = lengths*0.5
@@ -78,9 +76,6 @@ def main():
                 print "Error", e.message
                 break
         sleep(1.0/float(arg.rate))
-        if (i >= int(arg.count)):
-            print "exit"
-            return True
     if arg.a:
         fd.close()
 
