@@ -18,6 +18,7 @@ from acquirer import log_type,resample
 import argparse
 import sys
 import cPickle
+from scipy import interpolate
 
 
 logging.basicConfig()
@@ -98,10 +99,29 @@ def renormalize(data,parameters):
     return data
 
 def transform(rsp_data):
-	return np.abs(np.fft.fft(rsp_data))
+    return np.abs(np.fft.fft(rsp_data))
+
+def resample(raw_data,config,rsp_data=None,axis=0):
+    if rsp_data == None:
+        n = 320
+        rsp_data = np.zeros((n,raw_data.shape[-1]))
+    else:
+        n = rsp_data.shape[axis]
+    p = [config['resample_poly_coef']['p%d'%i] for i in range(8)]
+    f = np.poly1d(p)
+    old_x = f(np.arange(raw_data.shape[axis]))
+    new_x = np.linspace(0,raw_data.shape[axis],n)
+    if len(raw_data.shape) == 1:
+        tck = interpolate.splrep(old_x,raw_data,s=0)
+        rsp_data = interpolate.splev(new_x,tck)
+    else:
+        for line in range(raw_data.shape[-1]):
+            tck = interpolate.splrep(old_x,raw_data[:,line])
+            rsp_data[:,line] = interpolate.splev(new_x,tck)
+    return rsp_data
 
 def process(data,parameters,config):
-#	data = resample(data.T,config)
+    #data = resample(data.T, config, axis=0).T
     data = transform(data)
     #data = 10*np.log(data)
     data = renormalize(data,parameters)
