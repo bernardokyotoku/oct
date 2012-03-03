@@ -28,8 +28,8 @@ def matrix(phase):
         return np.exp(-((x-x0)/d)**2)
 
     def spectrum(L):
-        spectral_range = np.array([0.8,0.9]) #wavelength
-        lmbd0 = 0.85
+        spectral_range = np.array([1.25,1.35]) #wavelength
+        lmbd0 = 1.3
         Dlmbd = 0.02
         
         c = 3E8 # micrometers/microseconds
