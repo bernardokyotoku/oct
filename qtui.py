@@ -7,6 +7,9 @@ from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon
 from PyQt4.QtCore import QLine, QString, QObject, SIGNAL
 import sys
 from subprocess import Popen
+import processorg as pro
+import cPickle
+from configobj import ConfigObj
 
 class CameraScene(QGraphicsScene):
     def __init__(self):
@@ -41,6 +44,7 @@ class OCT(QMainWindow):
         super(OCT, self).__init__()
         self.out_file = "gst_pipe"
         self.initUI()
+        self.config = pro.parse_config()
 
     def initUI(self):
         container = QWidget()
@@ -67,28 +71,46 @@ class OCT(QMainWindow):
         self.show()
 
     def setup_gst(self):
-        self.pipeline = gst.Pipeline("pipeline")
+        self.fd = open("raw_data")
         if self.out_file is not None:
-            source = gst.element_factory_make("filesrc")
-            source.set_property("location",self.out_file)
-            demuxer = gst.element_factory_make("avidemux", name = 'demux')
-            demuxer.connect("pad-added", self.demuxer_callback)
-            self.queuev = gst.element_factory_make("queue", "queuev")
+            source = gst.element_factory_make('appsrc', 'source')
+            frame_rate = 25 
+            height = 240
+            width = 320
+            caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=%d, height=%d, framerate=(fraction)%d/1'%(width,height,frame_rate))
+            source.set_property('caps', caps)
+            source.set_property('blocksize', width*height*1)
+            source.connect('need-data', self.needdata)
+            colorspace = gst.element_factory_make("ffmpegcolorspace")
         else:
             source = gst.element_factory_make("v4l2src", "vsource")
             source.set_property("device", "/dev/video0")
         sink = gst.element_factory_make("xvimagesink", "sink")
 
-        pipeline_args = [source, self.queuev, demuxer, sink]
-        self.pipeline.add(*pipeline_args)
-        gst.element_link_many(source, demuxer)
-        gst.element_link_many(self.queuev, sink)
+        self.pipeline = gst.Pipeline("pipeline")
+        self.pipeline.add(source, colorspace, sink)
+        gst.element_link_many(source, colorspace, sink)
 
         bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.enable_sync_message_emission()
         bus.connect("message", self.on_message)
         bus.connect("sync-message::element", self.on_sync_message)
+
+    def needdata(self, src, length):
+        try:
+            data = self.unipickler.load()
+        except Exception, e:
+#            self.fd.close()
+#            self.fd = open("raw_data")
+#            self.unipickler = cPickle.Unpickler(self.fd)
+            print "end data"
+            self.pipeline.set_state(gst.STATE_NULL)
+            data = self.prev
+        self.prev = data
+        parameters = {"brightness":-00,"contrast":2}
+        data = pro.process(data,parameters,self.config)
+        src.emit('push-buffer', gst.Buffer(data.T.data))
 
     def demuxer_callback(self, demuxer, pad):
         if pad.get_property("template").name_template == "video_%02d":
@@ -116,6 +138,8 @@ class OCT(QMainWindow):
             imagesink.set_xwindow_id(win_id)
 
     def start_prev(self):
+        self.setup_gst()
+        self.unipickler = cPickle.Unpickler(self.fd)
         self.pipeline.set_state(gst.STATE_PLAYING)
         print "should be playing"
 
@@ -197,6 +221,6 @@ if __name__ == "__main__":
     #processor = Popen(["python", "processor-gst.py", "-o gst_pipe"])
     app = QtGui.QApplication(sys.argv)
     ex = OCT()
-    ex.setup_gst()
+    #ex.setup_gst()
     #ex.start_prev()
     sys.exit(app.exec_())
