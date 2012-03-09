@@ -63,7 +63,7 @@ class Processor(object):
     def setup_gstreamer(self):
         self.pipeline = gst.Pipeline('pipeline')
         vsource = gst.element_factory_make('appsrc', 'source')
-        frame_rate = 7
+        frame_rate = 5
         height = 240
         width = 320
         caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=%d, height=%d, framerate=(fraction)%d/1'%(width,height,frame_rate))
