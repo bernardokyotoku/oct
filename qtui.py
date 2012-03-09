@@ -4,7 +4,7 @@ pygst.require('0.10')
 import gst
 from PyQt4 import QtGui 
 from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap
-from PyQt4.QtCore import QLine, QString
+from PyQt4.QtCore import QLine, QString, QObject, SIGNAL
 import sys
 from subprocess import Popen
 
@@ -130,6 +130,7 @@ class OCT(QMainWindow):
         button_start = QPushButton('Start')
         self.camera_view = QGraphicsView(CameraScene())
         pane_scan_type = self.makeScanTypeButtons()
+        QObject.connect(button_start, SIGNAL("clicked()"), self.start_prev)
 
         pane_right = QWidget()
         grid_right = QGridLayout()
@@ -197,5 +198,5 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     ex = OCT()
     ex.setup_gst()
-    ex.start_prev()
+    #ex.start_prev()
     sys.exit(app.exec_())
