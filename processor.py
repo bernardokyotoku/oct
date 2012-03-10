@@ -1,75 +1,86 @@
 #!/usr/bin/env python
+'''
+
+- A response to http://stackoverflow.com/questions/8187257/play-audio-and-video-with-a-pipeline-in-gstreamer-python/8197837
+- Like it? Buy me a beer! https://flattr.com/thing/422997/Joar-Wandborg
+
+Pixel formats you a looking for this http://fourcc.org/
+'''
+import gst
+import gobject
+gobject.threads_init()
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
-import logging
-import sys
-import cPickle
-import Image
 from configobj import ConfigObj
 from validate import Validator
-from acquirer import transform,log_type,resample
+from acquirer import log_type,resample
+import argparse
+import sys
+import cPickle
+from scipy import interpolate
 
-def plot(image):
-	plt.imshow(image)
-	plt.show()
 
+logging.basicConfig()
 
-def main(config,arg):
-	in_fd = open(arg.in_file)
-	out_fd = open(arg.out_file,'w',0)
-	#while True:
-	try:
-		data = cPickle.load(in_fd)
-	except Exception:
-		return#break
-	parameters = {"brightness":-00,"contrast":8}
-#	data = resample(data.T,config)
-	data = transform(data)
-	#data = 10*np.log(data)
-	data = renormalize(data,parameters)
-	data = np.ascontiguousarray(np.uint16(data))
-	print "max=", np.max(data)
-	print "min=", np.min(data)
-	print "shape=", data.T.shape
-	#plot(data)
-	#image = Image.frombuffer(mode="L", size=data.shape, data=data.data, "L", 0, 1)
-	image = Image.frombuffer("L", data.T.shape, data.data, "raw","L", 0, 1)
-	try:
-		image.save(out_fd,format='jpeg')
-	except Exception:
-		return#break
-
-	in_fd.close()
-	out_fd.close()
-	return arg.daemon
+_log = logging.getLogger(__name__)
+_log.setLevel(logging.DEBUG)
 
 def renormalize(data,parameters):
-	data = data + parameters["brightness"]
-	data = data * parameters["contrast"]
-	return data
+    data = data + parameters['brightness']
+    data = data * parameters['contrast']
+    return data
 
-def parse_config():
-	validator = Validator({'log':log_type,'float':float})
-	config = ConfigObj('config.ini',configspec='configspec.ini')
-	if not config.validate(validator):
-		raise Exception('config.ini does not validate with configspec.ini.')
-	return config
+def transform(rsp_data):
+    return np.abs(np.fft.fft(rsp_data))
+
+def resample(raw_data,config,rsp_data=None,axis=0):
+    if rsp_data == None:
+        n = 320
+        rsp_data = np.zeros((n,raw_data.shape[-1]))
+    else:
+        n = rsp_data.shape[axis]
+    p = [config['resample_poly_coef']['p%d'%i] for i in range(8)]
+    f = np.poly1d(p)
+    old_x = f(np.arange(raw_data.shape[axis]))
+    new_x = np.linspace(0,raw_data.shape[axis],n)
+    if len(raw_data.shape) == 1:
+        tck = interpolate.splrep(old_x,raw_data,s=0)
+        rsp_data = interpolate.splev(new_x,tck)
+    else:
+        for line in range(raw_data.shape[-1]):
+            tck = interpolate.splrep(old_x,raw_data[:,line])
+            rsp_data[:,line] = interpolate.splev(new_x,tck)
+    return rsp_data
+
+def process(data,parameters,config):
+    #data = resample(data.T, config, axis=0).T
+    data = transform(data)
+    #data = 10*np.log(data)
+    data = renormalize(data,parameters)
+    data = np.ascontiguousarray(np.uint8(data))
+    return data
 
 def parse_arguments():
-	import argparse
-	flags = ["daemon"]
-	parser = argparse.ArgumentParser()
-	parser.description = "OCT client."
-	parser.add_argument('-i',dest='in_file', default="raw_data")#config['in_file'])
-	parser.add_argument('-o',dest='out_file', default="df.jpg" )#config['out_file'])
-	for flag in flags: 
-		parser.add_argument('--' + flag,action='store_true',default=False) 
-		return parser.parse_args()
+    flags = ['daemon']
+    parser = argparse.ArgumentParser()
+    parser.description = 'OCT client.'
+    parser.add_argument('-i',dest='in_file', default = "raw_data" )
+    parser.add_argument('-o',dest='out_file')
+    for flag in flags:
+        parser.add_argument('--' + flag,action='store_true',default=False) 
+    return parser.parse_args()
 
-if __name__ == "__main__":
-	config = parse_config()
-	arg = parse_arguments()
-	logging.basicConfig(filename='oct.log',level=config['log'])
-	repeat = main(config,arg)
-	 
-	
+def parse_config():
+    validator = Validator({'log':log_type,'float':float})
+    config = ConfigObj('config.ini', configspec='configspec.ini')
+    if not config.validate(validator):
+        raise Exception('config.ini does not validate with configspec.ini.')
+    return config
+
+if __name__ == '__main__':
+    config = parse_config()
+    args = parse_arguments()
+    logging.basicConfig(filename='oct.log',level=config['log'])
+    player = Processor(args)
+    player.run()
