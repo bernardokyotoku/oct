@@ -7,7 +7,7 @@ from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon
 from PyQt4.QtCore import QLine, QString, QObject, SIGNAL
 import sys
 from subprocess import Popen
-import processorg as pro
+import processor as pro
 import cPickle
 from configobj import ConfigObj
 
@@ -154,7 +154,7 @@ class OCT(QMainWindow):
         button_start = QPushButton('Start')
         self.camera_view = QGraphicsView(CameraScene())
         pane_scan_type = self.makeScanTypeButtons()
-        QObject.connect(button_start, SIGNAL("clicked()"), self.start_prev)
+        QObject.connect(button_start, SIGNAL("clicked()"), self.start_acquisition)
 
         pane_right = QWidget()
         grid_right = QGridLayout()
@@ -166,9 +166,10 @@ class OCT(QMainWindow):
         return pane_right
 
     def start_acquisition(self):
-        from subprocess import Popen
-        #self.acquisition = Popen(["acquirer.py","--continuous"])
-        self.acquisition = Popen(["python","image_generator.py","-q"])
+        from subprocess import Popen 
+        self.acquisition = Popen(["python","image_generator.py",
+                                  "-a","--count=30","--rate=25"],)
+        self.start_prev()
 
     def stop_acquisition(self):
         self.acquisition.terminate()
