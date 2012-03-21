@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import gobject, pygst
 pygst.require('0.10')
@@ -28,7 +29,12 @@ class OCT (QtGui.QMainWindow, form_class):
             frame_rate = 25 
             height = 240
             width = 320
-            caps = gst.Caps('video/x-raw-gray, bpp=8, endianness=1234, width=%d, height=%d, framerate=(fraction)%d/1'%(width,height,frame_rate))
+            caps = gst.Caps("""video/x-raw-gray, 
+                             bpp=8, 
+                             endianness=1234, 
+                             width=%d, 
+                             height=%d, 
+                             framerate=(fraction)%d/1"""%(width,height,frame_rate))
             source.set_property('caps', caps)
             source.set_property('blocksize', width*height*1)
             source.connect('need-data', self.needdata)
@@ -52,9 +58,6 @@ class OCT (QtGui.QMainWindow, form_class):
         try:
             data = self.unipickler.load()
         except Exception, e:
-#            self.fd.close()
-#            self.fd = open("raw_data")
-#            self.unipickler = cPickle.Unpickler(self.fd)
             print "end data"
             self.pipeline.set_state(gst.STATE_NULL)
             data = self.prev
