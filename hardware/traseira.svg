@@ -14,9 +14,49 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.2 r9819"
-   sodipodi:docname="New document 1">
+   sodipodi:docname="traseira.svg">
   <defs
-     id="defs4" />
+     id="defs4">
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Mend"
+       style="overflow:visible;">
+      <path
+         id="path3831"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.4) rotate(180) translate(10,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lend"
+       style="overflow:visible;">
+      <path
+         id="path3825"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lstart"
+       style="overflow:visible">
+      <path
+         id="path3822"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+         transform="scale(0.8) translate(12.5,0)" />
+    </marker>
+  </defs>
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -24,17 +64,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.98994949"
-     inkscape:cx="409.99424"
-     inkscape:cy="735.32385"
+     inkscape:zoom="7.9195959"
+     inkscape:cx="1006.8682"
+     inkscape:cy="502.44451"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="976"
-     inkscape:window-height="562"
-     inkscape:window-x="66"
+     inkscape:window-width="1280"
+     inkscape:window-height="776"
+     inkscape:window-x="0"
      inkscape:window-y="24"
-     inkscape:window-maximized="0" />
+     inkscape:window-maximized="1" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -43,7 +83,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -52,40 +92,267 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:#cccccc;fill-opacity:1;stroke:none"
+       style="fill:#cccccc;fill-opacity:1;stroke:none;stroke-width:3.03661417;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect2985"
-       width="429.31482"
-       height="272.74118"
-       x="133.34013"
-       y="172.51932" />
+       width="1080.7086"
+       height="850.39368"
+       x="-86.873123"
+       y="116.10551" />
     <rect
        style="fill:#666666;fill-opacity:1;stroke:none"
        id="rect2987"
        width="49.960629"
        height="106.29921"
-       x="183.84776"
-       y="250.06787" />
+       x="868.26471"
+       y="679.51611" />
     <rect
-       y="207.86829"
-       x="311.12698"
+       y="675.54126"
+       x="707.04437"
        height="210.1181"
        width="101.33858"
        id="rect2989"
        style="fill:#666666;fill-opacity:1;stroke:none" />
     <rect
-       style="fill:#666666;fill-opacity:1;stroke:none"
-       id="rect2991"
-       width="43.228348"
-       height="230.31496"
-       x="-343.63599"
-       y="481.23346"
-       transform="matrix(0,-1,1,0,0,0)" />
-    <rect
-       y="261.24176"
-       x="55.558388"
+       y="809.85315"
+       x="867.11823"
        height="77.952759"
        width="86.81102"
        id="rect2993"
        style="fill:#666666;fill-opacity:1;stroke:none" />
+    <rect
+       y="658.3092"
+       x="-12.854111"
+       height="210.1181"
+       width="234.19572"
+       id="rect3045"
+       style="fill:#666666;fill-opacity:1;stroke:none" />
+    <rect
+       style="fill:#666666;fill-opacity:1;stroke:none"
+       id="rect3043"
+       width="259.91"
+       height="210.1181"
+       x="270.00302"
+       y="659.73779" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#666666;fill-opacity:1;stroke:none"
+       id="path3047"
+       sodipodi:cx="485"
+       sodipodi:cy="160.21933"
+       sodipodi:rx="36.42857"
+       sodipodi:ry="36.42857"
+       d="m 521.42857,160.21933 a 36.42857,36.42857 0 1 1 -72.85714,0 36.42857,36.42857 0 1 1 72.85714,0 z"
+       transform="translate(300.65122,271.71872)" />
+    <g
+       id="g5456"
+       transform="translate(31.500361,55.630178)">
+      <path
+         inkscape:connector-curvature="0"
+         id="path4263"
+         d="M 1061.7332,637.08883 897.44747,678.51741"
+         style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)" />
+      <text
+         xml:space="preserve"
+         style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+         x="1068.8761"
+         y="638.5174"
+         id="text4455"
+         sodipodi:linespacing="125%"><tspan
+           sodipodi:role="line"
+           id="tspan4457"
+           x="1068.8761"
+           y="638.5174">Chave seletora de voltagem</tspan></text>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="1026.2916"
+       y="613.11279"
+       id="text4463"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4465"
+         x="1026.2916"
+         y="613.11279">Conector placa DAQ da NI</tspan><tspan
+         sodipodi:role="line"
+         x="1026.2916"
+         y="638.11279"
+         id="tspan5484">Preciso das dimensoes</tspan></text>
+    <path
+       inkscape:connector-curvature="0"
+       id="path4471"
+       d="m 1014.6549,608.0323 -93.9565,6.00145"
+       style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)"
+       sodipodi:nodetypes="cc" />
+    <g
+       id="g5461"
+       transform="translate(72.683829,51.374202)">
+      <text
+         sodipodi:linespacing="125%"
+         id="text4451"
+         y="772.80316"
+         x="1007.4474"
+         style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+         xml:space="preserve"><tspan
+           y="772.80316"
+           x="1007.4474"
+           id="tspan4453"
+           sodipodi:role="line">Tomada Fêmea</tspan></text>
+      <path
+         inkscape:connector-curvature="0"
+         id="path4473"
+         d="m 993.16174,768.51741 -88.57142,24.28572"
+         style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)"
+         sodipodi:nodetypes="cc" />
+    </g>
+    <g
+       id="g5474"
+       transform="translate(72.857144,-2.8571429)">
+      <text
+         xml:space="preserve"
+         style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+         x="641.66504"
+         y="1022.7155"
+         id="text4459"
+         sodipodi:linespacing="125%"><tspan
+           sodipodi:role="line"
+           id="tspan4461"
+           x="641.66504"
+           y="1022.7155">Chave principal + plug para cabo de força</tspan></text>
+      <path
+         sodipodi:nodetypes="cc"
+         style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)"
+         d="m 692.71359,988.60667 -4.28571,-81.4286"
+         id="path4475"
+         inkscape:connector-curvature="0" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="152.44754"
+       y="1029.2317"
+       id="text4477"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4479"
+         x="152.44754"
+         y="1029.2317">Passagem para dissipador</tspan></text>
+    <path
+       sodipodi:nodetypes="cc"
+       style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)"
+       d="M 296.73317,993.51741 361.73318,874.2317"
+       id="path4481"
+       inkscape:connector-curvature="0" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4673"
+       d="M 203.87602,991.37456 183.16175,878.51741"
+       style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)"
+       sodipodi:nodetypes="cc" />
+    <g
+       id="g5479"
+       transform="translate(5.7142854,172.85715)">
+      <text
+         xml:space="preserve"
+         style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+         x="1010.3046"
+         y="215.66025"
+         id="text4467"
+         sodipodi:linespacing="125%"><tspan
+           sodipodi:role="line"
+           id="tspan4469"
+           x="1010.3046"
+           y="215.66025">Conector BNC</tspan></text>
+      <path
+         style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)"
+         d="M 991.73318,211.37454 827.44747,252.80312"
+         id="path5419"
+         inkscape:connector-curvature="0" />
+    </g>
+    <g
+       id="g5466"
+       transform="translate(-8.4699036,50.507627)">
+      <rect
+         transform="matrix(0,-1,1,0,0,0)"
+         y="651.53802"
+         x="-584.07697"
+         height="244.48819"
+         width="44.29134"
+         id="rect2991"
+         style="fill:#666666;fill-opacity:1;stroke:none" />
+      <rect
+         style="fill:#999999;fill-opacity:1;stroke:none"
+         id="rect5425"
+         width="43.228348"
+         height="226.77165"
+         x="-583.54547"
+         y="660.3963"
+         transform="matrix(0,-1,1,0,0,0)" />
+    </g>
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:3.54330709;stroke-miterlimit:4;stroke-dasharray:3.54330709,3.54330709;stroke-dashoffset:0"
+       id="rect5427"
+       width="1077.7316"
+       height="43.025402"
+       x="-85.354813"
+       y="921.95544" />
+    <rect
+       y="558.47327"
+       x="-85.146111"
+       height="360.63779"
+       width="1077.3171"
+       id="rect5440"
+       style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-miterlimit:4;stroke-dasharray:3.54330709, 3.54330709;stroke-dashoffset:0" />
+    <rect
+       y="505.63647"
+       x="-85.145264"
+       height="49.876026"
+       width="1077.4056"
+       id="rect5442"
+       style="fill:none;stroke:#000000;stroke-width:3.54330707;stroke-miterlimit:4;stroke-dasharray:3.54330709, 3.54330709;stroke-dashoffset:0" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text5448"
+       y="613.73425"
+       x="-73.809898"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       xml:space="preserve"><tspan
+         y="613.73425"
+         x="-73.809898"
+         id="tspan5450"
+         sodipodi:role="line">Andar 1</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5452"
+       y="534.94238"
+       x="-63.708374"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       xml:space="preserve"><tspan
+         y="534.94238"
+         x="-63.708374"
+         id="tspan5454"
+         sodipodi:role="line">Base andar 2</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="-71.789589"
+       y="461.20123"
+       id="text5444"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5446"
+         x="-71.789589"
+         y="461.20123">Andar 2</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="-77.85051"
+       y="949.10492"
+       id="text5470"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5472"
+         x="-77.85051"
+         y="949.10492">Base andar 1</tspan></text>
   </g>
 </svg>
