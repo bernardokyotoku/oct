@@ -9,7 +9,7 @@ import cPickle
 from configobj import ConfigObj
 from PyQt4 import QtCore,QtGui,uic
 from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap
-from PyQt4.QtCore import QLine, QString, QObject, SIGNAL
+from PyQt4.QtCore import QLine, QString, QObject, SIGNAL, QLineF, QRectF
 form_class, base_class = uic.loadUiType("front_window.ui")
  
 class OCT (QtGui.QMainWindow, form_class):
@@ -21,6 +21,33 @@ class OCT (QtGui.QMainWindow, form_class):
         QObject.connect(start_button,SIGNAL("clicked()"),self.start_acquisition)
         self.config = pro.parse_config()
         self.appsrc = True
+        self.setup_camera()
+
+    def setup_camera(self):
+        camera = self.findChild(QGraphicsView, "camera")
+        self.scene = QGraphicsScene()
+        self.scene.setSceneRect(QRectF(camera.geometry()))
+        camera.setScene(self.scene)
+        self.scene.mousePressEvent = self.camera_pressed
+        self.scene.mouseMoveEvent = self.camera_moved
+        self.scene.mouseReleaseEvent = self.camera_released
+
+    def camera_pressed(self, event):
+        self.pressed_pos = event.scenePos()
+
+    def camera_released(self, event):
+        if hasattr(self,"item"):
+            self.scene.removeItem(self.item)
+        self.released_pos = event.scenePos()
+        self.item = self.scene.addRect(QRectF(self.pressed_pos, event.scenePos()))
+
+    def camera_moved(self, event):
+        if hasattr(self,"item"):
+            self.scene.removeItem(self.item)
+        self.item = self.scene.addRect(QRectF(self.pressed_pos, event.scenePos()))
+#        selector = {    "line":self.camera_canvas.create_line,
+#                "rectangle":self.camera_canvas.create_rectangle}[self.mode.get()]
+#        selector(*coordinates)
 
     def setup_gst(self):
         self.fd = open("raw_data")
