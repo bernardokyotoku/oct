@@ -16,38 +16,42 @@ class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent=None,selected=[],flag=0,*args):
         QtGui.QWidget.__init__(self,parent,*args)
         self.setupUi(self)
-        self.windowId = self.findChild(QWidget,"tomography").winId()
-        start_button = self.findChild(QPushButton,'start')
-        QObject.connect(start_button,SIGNAL("clicked()"),self.start_acquisition)
+        self.windowId = self.tomography.winId()
+        QObject.connect(self.start,SIGNAL("clicked()"),self.start_acquisition)
         self.config = pro.parse_config()
         self.appsrc = True
         self.setup_camera()
 
     def setup_camera(self):
-        camera = self.findChild(QGraphicsView, "camera")
         self.scene = QGraphicsScene()
-        self.scene.setSceneRect(QRectF(camera.geometry()))
-        camera.setScene(self.scene)
+        self.scene.setSceneRect(QRectF(self.camera.geometry()))
+        self.camera.setScene(self.scene)
         self.scene.mousePressEvent = self.camera_pressed
         self.scene.mouseMoveEvent = self.camera_moved
         self.scene.mouseReleaseEvent = self.camera_released
+        QObject.connect(self.d2, SIGNAL('clicked()'), self.change_selector) 
+        QObject.connect(self.d3, SIGNAL('clicked()'), self.change_selector) 
+        self.d2.click()
+
+    def change_selector(self):
+        if self.d2.isChecked():
+            self.selector = lambda start, end: self.scene.addLine(QLineF(start, end))
+        else:
+            self.selector = lambda start, end: self.scene.addRect(QRectF(start, end))
 
     def camera_pressed(self, event):
         self.pressed_pos = event.scenePos()
 
     def camera_released(self, event):
-        if hasattr(self,"item"):
+        if hasattr(self, "item"):
             self.scene.removeItem(self.item)
         self.released_pos = event.scenePos()
-        self.item = self.scene.addRect(QRectF(self.pressed_pos, event.scenePos()))
+        self.item = self.selector(self.pressed_pos, event.scenePos())
 
     def camera_moved(self, event):
-        if hasattr(self,"item"):
+        if hasattr(self, "item"):
             self.scene.removeItem(self.item)
-        self.item = self.scene.addRect(QRectF(self.pressed_pos, event.scenePos()))
-#        selector = {    "line":self.camera_canvas.create_line,
-#                "rectangle":self.camera_canvas.create_rectangle}[self.mode.get()]
-#        selector(*coordinates)
+        self.item = self.selector(self.pressed_pos, event.scenePos())
 
     def setup_gst(self):
         self.fd = open("raw_data")
