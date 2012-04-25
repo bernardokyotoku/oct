@@ -17,59 +17,37 @@ form_class, base_class = uic.loadUiType("/home/bkyotoku/Projects/oct/front_windo
 from numpy import *
 from PyQt4 import Qt
 import PyQt4.Qwt5 as Qwt
+from pyqtgraph.graphicsItems import ImageItem
 
-class Tomo(QWidget):
-    def paintEvent(self, event):
-        QWidget.paintEvent(self, event)
-        painter = QPainter(self.tomography)
-        painter.setClipRect(self.contentsRect())
-        r = self.contentsRect()
-        self.label.setText(str(r))
-        painter.begin(self)
-        painter.setPen(Qt.QPen(Qt.Qt.blue, 3, Qt.Qt.DotLine))
-        painter.drawLine(QPoint(0, 0), QPoint(100, 100))
-#        painter.setFont(QFont("Arial", 30))
-#        painter.drawText(QRect(100,100), Qt.Qt.AlignCenter, "Qt")
-        painter.end()
-#        self.drawContents(painter)
 
-class Overlay(QWidget):
+#    def showEvent(self, event):
+#        self.timer = self.startTimer(50)
+#        self.counter = 0
+#
+#    def timerEvent(self, event):
+#        self.counter += 1
+#        self.update()
+#        if self.counter == 60:
+#            self.killTimer(self.timer)
+#            self.hide()
 
-    def __init__(self, parent = None):
-        QWidget.__init__(self, parent)
-        palette = QPalette(self.palette())
-        palette.setColor(palette.Background, QtCore.Qt.transparent)
-        self.setPalette(palette)
-
-    def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
-#        painter.setRenderHint(QPainter.Antialiasing)
-#        painter.fillRect(event.rect(), QBrush(QColor(255, 255, 255, 127)))
-#        painter.setPen(QPen(QtCore.Qt.NoPen))
-        painter.setPen(Qt.QPen(Qt.Qt.blue, 3, Qt.Qt.DotLine))
-        painter.drawLine(QPoint(0, 0), QPoint(100, 100))
-        for i in range(6):
-            if (self.counter / 5) % 6 == i:
-                painter.setBrush(QBrush(QColor(127 + (self.counter % 5)*32, 127, 127)))
-            else:
-                painter.setBrush(QBrush(QColor(127, 127, 127)))
-                painter.drawEllipse(
-                    self.width() /2 + 30 * math.cos(2 * math.pi * i / 6.0) - 10,
-                    self.height()/2 + 30 * math.sin(2 * math.pi * i / 6.0) - 10,
-                    20, 20)
-        painter.end()
-
-    def showEvent(self, event):
-        self.timer = self.startTimer(50)
-        self.counter = 0
-
-    def timerEvent(self, event):
-        self.counter += 1
-        self.update()
-        if self.counter == 60:
-            self.killTimer(self.timer)
-            self.hide()
+class AcquirerProcessor(QtCore.QThread):
+    def __init__(self,parent=None):
+        QtCore.QThread.__init__(self,parent)
+    def run(self):
+        self.fd = open("raw_data")
+        self.unipickler = cPickle.Unpickler(self.fd)
+        self.processed_data = np.empty((512, 320, 240), dtype = np.int16)
+        while not self.fd.closed:
+            try:
+                self.data = self.unipickler.load()
+            except Exception, e:
+                print "end data"
+                self.data = self.prev
+            self.prev = self.data
+            parameters = {"brightness":-00, "contrast":2}
+            self.processed_data = pro.process(self.data, parameters, self.config)
+            self.emit(QtCore.SIGNAL("Activated( QString )"),self.test)
  
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
@@ -80,40 +58,18 @@ class OCT (QtGui.QMainWindow, form_class):
         self.windowId = self.tomography.winId()
         self.config = pro.parse_config()
         self.appsrc = True
-#        self.tomography.paintEvent = self.paintEvente
-#        self.setup_tomography()
-    
-        self.overlay = QGraphicsView(self.tomography)
-#        self.overlay = Overlay(self.tomography)
-        self.s = QGraphicsScene()
-        self.overlay.setScene(self.s)
         self.setup_a_scan()
         self.setup_camera()
-
-#    def paintEvent(self, event):
-##    def dra(self):
-##        QtGui.QMainWindow.paintEvent(self, event)
-#        painter = QPainter()
-##        painter.setClipRect(self.contentsRect())
-##        r = self.contentsRect()
-##        self.label.setText(str(r))
-#        painter.begin(self)
-#        painter.setPen(Qt.QPen(Qt.Qt.blue, 3, Qt.Qt.DotLine))
-#        painter.drawLine(QPoint(0, 0), QPoint(100, 100))
-##        painter.setFont(QFont("Arial", 30))
-##        painter.drawText(QRect(100,100), Qt.Qt.AlignCenter, "Qt")
-#        painter.end()
-##        self.drawContents(painter)
+        self.setup_tomography()
 
     def setup_tomography(self):
-        self.tomograhy = Tomo()
-        self.windowId = self.tomography.winId()
-        size_policy = QSizePolicy()
-        size_policy.setHorizontalStretch(3) 
-        size_policy.setHorizontalPolicy(size_policy.Preferred) 
-        size_policy.setVerticalPolicy(size_policy.Preferred) 
-        self.tomography.setSizePolicy(size_policy)
-        self.widget_4.children()[0].addWidget(self.tomography)
+        self.tomography_scene = QGraphicsScene()
+        self.tomography_scene.setBackgroundBrush(QtCore.Qt.black)
+        self.tomography.setScene(self.tomography_scene) 
+        self.image = ImageItem()
+        self.tomography_scene.addItem(self.image)
+        self.pixmap = QPixmap()
+        self.tomography_scene.addPixmap(self.pixmap)
 
     def setup_a_scan(self):
         self.plot = Qwt.QwtPlot()
@@ -133,7 +89,10 @@ class OCT (QtGui.QMainWindow, form_class):
 
     
     def update_plot(self):
-        self.overlay.show()
+        self.image.updateImage(self.data.T)
+        self.tomography.fitInView(self.image, QtCore.Qt.KeepAspectRatio)
+#        self.pixmap.update()
+#        self.overlay.show()
 #        self.s.addLine(0, 0,100, 100,Qt.QPen(Qt.Qt.blue, 3, Qt.Qt.DotLine))
 #        y = self.data.T[50]
 #        x = np.linspace(0, 20,len(y))
@@ -208,7 +167,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.fd = open("raw_data")
         if self.appsrc:
             source = gst.element_factory_make('appsrc', 'source')
-            frame_rate = 25 
+            frame_rate = 10 
             height = 240
             width = 320
             caps = gst.Caps("""video/x-raw-gray, 
@@ -225,9 +184,15 @@ class OCT (QtGui.QMainWindow, form_class):
             source = gst.element_factory_make("v4l2src", "vsource")
             source.set_property("device", "/dev/video0")
         sink = gst.element_factory_make("xvimagesink", "sink")
+        sink.set_property("force-aspect-ratio", True)
+        avimux = gst.element_factory_make("avimux","avimux")
+#        queuev = gst.element_factory_make("queue","queuev")
+#        filesink = gst.element_factory_make("filesink", "filesink")
+#        filesink.set_property('location', 'file.avi')
 
         self.pipeline = gst.Pipeline("pipeline")
         self.pipeline.add(source, colorspace, sink)
+#        gst.element_link_many(source, colorspace, queuev, sink)
         gst.element_link_many(source, colorspace, sink)
 
         bus = self.pipeline.get_bus()
@@ -244,7 +209,7 @@ class OCT (QtGui.QMainWindow, form_class):
             self.pipeline.set_state(gst.STATE_NULL)
             self.data = self.prev
         self.prev = self.data
-        parameters = {"brightness":-00,"contrast":2}
+        parameters = {"brightness":-00, "contrast":2}
         self.data = pro.process(self.data, parameters, self.config)
         src.emit('push-buffer', gst.Buffer(self.data.T.data))
 
@@ -271,7 +236,10 @@ class OCT (QtGui.QMainWindow, form_class):
             win_id = self.windowId
             assert win_id
             imagesink = message.src
+#            print dir(imagesink)
             imagesink.set_xwindow_id(win_id)
+
+#            imagesink.gst_x_overlay_set_xwindow_id(win_id)
 
     def start_prev(self):
         self.setup_gst()
@@ -282,7 +250,7 @@ class OCT (QtGui.QMainWindow, form_class):
     def start_acquisition(self):
         from subprocess import Popen 
         self.acquisition = Popen(["python","image_generator.py",
-                                  "-a","--count=10","--rate=25"],)
+                                  "-a","--count=100","--rate=25"],)
         self.start_prev()
         
 if __name__ == '__main__':
