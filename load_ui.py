@@ -32,22 +32,28 @@ from pyqtgraph.graphicsItems import ImageItem
 #            self.hide()
 
 class AcquirerProcessor(QtCore.QThread):
-    def __init__(self,parent=None):
-        QtCore.QThread.__init__(self,parent)
+    data_ready = QtCore.Signal(object)
+    def __init__(self, config, parent=None):
+        self.config = config
+        QtCore.QThread.__init__(self, parent)
     def run(self):
         self.fd = open("raw_data")
         self.unipickler = cPickle.Unpickler(self.fd)
         self.processed_data = np.empty((512, 320, 240), dtype = np.int16)
+        i = 0
         while not self.fd.closed:
             try:
                 self.data = self.unipickler.load()
             except Exception, e:
                 print "end data"
-                self.data = self.prev
+#                self.data = self.prev
             self.prev = self.data
             parameters = {"brightness":-00, "contrast":2}
-            self.processed_data = pro.process(self.data, parameters, self.config)
-            self.emit(QtCore.SIGNAL("Activated( QString )"),self.test)
+            self.data = pro.process(self.data, parameters, self.config).T
+            self.processed_data[i] = self.data
+            i += 1
+            self.data_ready.emit(self.data)
+#            self.emit(QtCore.SIGNAL("Activated"))
  
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
@@ -242,10 +248,19 @@ class OCT (QtGui.QMainWindow, form_class):
 #            imagesink.gst_x_overlay_set_xwindow_id(win_id)
 
     def start_prev(self):
-        self.setup_gst()
-        self.unipickler = cPickle.Unpickler(self.fd)
-        self.pipeline.set_state(gst.STATE_PLAYING)
-        print "should be playing"
+        self.DataCollector = AcquirerProcessor(self.config, self )
+        self.DataCollector.data_ready.connect(self.Activated, QtCore.Qt.QueuedConnection)
+#        self.connect(self.DataCollector,QtCore.SIGNAL("Activated"), self.Activated)
+        self.DataCollector.start()
+
+    def Activated(self, data):
+        self.image.updateImage(data)
+        self.tomography.fitInView(self.image, QtCore.Qt.KeepAspectRatio)
+
+#        self.setup_gst()
+#        self.unipickler = cPickle.Unpickler(self.fd)
+#        self.pipeline.set_state(gst.STATE_PLAYING)
+#        print "should be playing"
 
     def start_acquisition(self):
         from subprocess import Popen 
