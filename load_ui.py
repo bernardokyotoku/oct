@@ -36,22 +36,20 @@ class AcquirerProcessor(QtCore.QThread):
     def __init__(self, config, parent=None):
         self.config = config
         QtCore.QThread.__init__(self, parent)
+
     def run(self):
         self.fd = open("raw_data")
         self.unipickler = cPickle.Unpickler(self.fd)
-        self.processed_data = np.empty((512, 320, 240), dtype = np.int16)
-        i = 0
         while not self.fd.closed:
             try:
                 self.data = self.unipickler.load()
             except Exception, e:
-                print "end data"
+                self.fd.close()
+                continue
 #                self.data = self.prev
             self.prev = self.data
             parameters = {"brightness":-00, "contrast":2}
             self.data = pro.process(self.data, parameters, self.config).T
-            self.processed_data[i] = self.data
-            i += 1
             self.data_ready.emit(self.data)
 #            self.emit(QtCore.SIGNAL("Activated"))
  
@@ -67,6 +65,13 @@ class OCT (QtGui.QMainWindow, form_class):
         self.setup_a_scan()
         self.setup_camera()
         self.setup_tomography()
+        self.setup_select_image()
+        self.processed_data = []
+        self.current_image = 0
+
+
+    def setup_select_image(self):
+        QObject.connect(self.select_image, SIGNAL("valueChanged( int )"), self.update_image)
 
     def setup_tomography(self):
         self.tomography_scene = QGraphicsScene()
@@ -76,6 +81,25 @@ class OCT (QtGui.QMainWindow, form_class):
         self.tomography_scene.addItem(self.image)
         self.pixmap = QPixmap()
         self.tomography_scene.addPixmap(self.pixmap)
+
+        self.curve = Qwt.QwtPlotCurve()
+        self.curve.attach(self.plot)
+        self.curve.setPen(Qt.QPen(Qt.Qt.green, 1))
+        self.tomography_scene.mousePressEvent = self.tomography_pressed
+        self.tomography_scene.mouseMoveEvent = self.tomography_pressed
+#        self.tomography_scene.mouseReleaseEvent = self.camera_released
+
+    def tomography_pressed(self, event):
+        x = int(event.scenePos().x())
+        if hasattr(self, "tomography_line"):
+            self.tomography_scene.removeItem(self.tomography_line)
+        yf = int(self.tomography_scene.sceneRect().top())
+        y0 = int(self.tomography_scene.sceneRect().bottom())
+        self.tomography_line = self.tomography_scene.addLine(x, y0, x, yf, QPen(Qt.Qt.yellow, 1, Qt.Qt.DotLine))
+        Y = self.processed_data[self.current_image][x]
+        X = np.linspace(10,0,len(Y))
+        self.curve.setData(Y,X)
+        self.plot.replot()
 
     def setup_a_scan(self):
         self.plot = Qwt.QwtPlot()
@@ -93,6 +117,11 @@ class OCT (QtGui.QMainWindow, form_class):
         self.plot.setCanvasBackground(Qt.Qt.black)
         self.widget_4.children()[0].addWidget(self.plot)
 
+    def update_image(self, index):
+        self.current_image = index - 1
+        self.image.updateImage(self.processed_data[self.current_image])
+        self.tomography.fitInView(self.image, QtCore.Qt.KeepAspectRatio)
+        
     
     def update_plot(self):
         self.image.updateImage(self.data.T)
@@ -253,9 +282,22 @@ class OCT (QtGui.QMainWindow, form_class):
 #        self.connect(self.DataCollector,QtCore.SIGNAL("Activated"), self.Activated)
         self.DataCollector.start()
 
+    def save_processed_data(self, filename):
+        import h5py
+        file = h5py.File(filename, 'w')
+        root = file.create_group("root")
+        for i, image in enumerate(self.processed_data):
+            root.create_dataset('image_%03d'%i, image.shape, image.dtype) 
+        file.close()
+
+
     def Activated(self, data):
         self.image.updateImage(data)
         self.tomography.fitInView(self.image, QtCore.Qt.KeepAspectRatio)
+        self.processed_data += [data]
+        n_images = len(self.processed_data)
+        self.current_image = n_images - 1
+        self.select_image.setMaximum(n_images)
 
 #        self.setup_gst()
 #        self.unipickler = cPickle.Unpickler(self.fd)
@@ -265,7 +307,8 @@ class OCT (QtGui.QMainWindow, form_class):
     def start_acquisition(self):
         from subprocess import Popen 
         self.acquisition = Popen(["python","image_generator.py",
-                                  "-a","--count=100","--rate=25"],)
+                                  "-a","--count=10","--rate=25",
+                                  "--height=480", "--width=640"],)
         self.start_prev()
         
 if __name__ == '__main__':
