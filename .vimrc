@@ -1,1 +1,1 @@
-map <F9> :!ipython -i test_ui.py<enter>
+map <F6> :!ipython -i test_ui.py<enter>
