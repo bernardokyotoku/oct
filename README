@@ -8,6 +8,15 @@ Credits
 http://www.bluishcoder.co.nz/2007/08/svg-video-demo.html
 Chris Double
 
+What is the interface to select a 3D scan? Goes through config file, needs to set x0,xf,y0,yf there
+
 TODO
 - feed DCU to camera
+- Overlay the tomography screen:
+    Use PyQtVideo?
+    Use QPaint?
+    Use GraphicsView?
 done - Check gstreamer sink as qt element
+
+Idea
+When stoped use image! How to put image?

@@ -65,6 +65,24 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="backgroundBrush">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>0</red>
+               <green>0</green>
+               <blue>0</blue>
+              </color>
+             </brush>
+            </property>
+            <property name="foregroundBrush">
+             <brush brushstyle="NoBrush">
+              <color alpha="255">
+               <red>0</red>
+               <green>0</green>
+               <blue>0</blue>
+              </color>
+             </brush>
+            </property>
            </widget>
           </item>
          </layout>
@@ -244,16 +262,6 @@
                  <string>TextLabel</string>
                 </property>
                </widget>
-              </widget>
-             </item>
-             <item>
-              <widget class="QGraphicsView" name="camera">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                 <horstretch>1</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
               </widget>
              </item>
             </layout>

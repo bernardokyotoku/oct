@@ -18,6 +18,8 @@ from numpy import *
 from PyQt4 import Qt
 import PyQt4.Qwt5 as Qwt
 from pyqtgraph.graphicsItems import ImageItem
+import uc480
+from CameraGraphicsView import CameraGraphicsView
 
 
 #    def showEvent(self, event):
@@ -30,6 +32,23 @@ from pyqtgraph.graphicsItems import ImageItem
 #        if self.counter == 60:
 #            self.killTimer(self.timer)
 #            self.hide()
+
+def gray2qimage(gray):
+    """Convert the 2D numpy array `gray` into a 8-bit QImage with a gray
+    colormap.  The first dimension represents the vertical image axis.
+    http://www.mail-archive.com/pyqt@riverbankcomputing.com/msg17961.html"""
+    if len(gray.shape) != 2:
+        raise ValueError("gray2QImage can only convert 2D arrays")
+
+    gray = np.require(gray, np.uint8, 'C')
+
+    h, w = gray.shape
+
+    result = QtGui.QImage(gray.data, w, h, QtGui.QImage.Format_Indexed8)
+    result.ndarray = gray
+    for i in range(256):
+        result.setColor(i, QtGui.QColor(i, i, i).rgb())
+    return result
 
 class AcquirerProcessor(QtCore.QThread):
     data_ready = QtCore.Signal(object)
@@ -52,6 +71,25 @@ class AcquirerProcessor(QtCore.QThread):
             self.data = pro.process(self.data, parameters, self.config).T
             self.data_ready.emit(self.data)
 #            self.emit(QtCore.SIGNAL("Activated"))
+
+#class AcquirerProcessor(QtCore.QThread):
+#    data_ready = QtCore.Signal(object)
+#    def __init__(self, config, parent=None):
+#        self.config = config
+#        QtCore.QThread.__init__(self, parent)
+##        camera = uc480.camera(1)
+#        camera.AllocImageMem()
+#        camera.SetImageMem()
+#        camera.SetImageSize()
+#        camera.SetColorMode()
+#        camera.CaptureVideo()
+#
+#
+#    def run(self):
+#        while True:
+#            camera.CopyImageMem()
+#            self.data_ready.emit(camera.data)
+##            self.emit(QtCore.SIGNAL("Activated"))
  
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
@@ -70,6 +108,12 @@ class OCT (QtGui.QMainWindow, form_class):
         self.current_image = 0
 
 
+    def closeEvent(self, event):
+        self.camera_device.StopLiveVideo()
+        self.camera_device.FreeImageMem()
+        self.camera_device.ExitCamera()
+
+
     def setup_select_image(self):
         QObject.connect(self.select_image, SIGNAL("valueChanged( int )"), self.update_image)
 
@@ -79,8 +123,8 @@ class OCT (QtGui.QMainWindow, form_class):
         self.tomography.setScene(self.tomography_scene) 
         self.image = ImageItem()
         self.tomography_scene.addItem(self.image)
-        self.pixmap = QPixmap()
-        self.tomography_scene.addPixmap(self.pixmap)
+#        self.pixmap = QPixmap()
+#        self.tomography_scene.addPixmap(self.pixmap)
 
         self.curve = Qwt.QwtPlotCurve()
         self.curve.attach(self.plot)
@@ -140,30 +184,61 @@ class OCT (QtGui.QMainWindow, form_class):
 #        self.plot.replot()
 
     def setup_camera(self):
-        self.scene = QGraphicsScene()
-        self.camera.setSceneRect(QRectF(self.tomography.geometry()))
-        self.camera.setScene(self.scene)
-        self.scene.mousePressEvent = self.camera_pressed
-        self.scene.mouseMoveEvent = self.camera_moved
-        self.scene.mouseReleaseEvent = self.camera_released
+        self.camera_view = CameraGraphicsView()
+        self.widget_7.children()[0].addWidget(self.camera_view)
+
+        self.camera_scene = QGraphicsScene()
+        self.camera_view.setScene(self.camera_scene)
+        self.camera_scene.mousePressEvent = self.camera_pressed
+        self.camera_scene.mouseMoveEvent = self.camera_moved
+        self.camera_scene.mouseReleaseEvent = self.camera_released
         self.scan_type = 'continuous'
         QObject.connect(self.d2, SIGNAL('clicked()'), self.change_selector) 
         QObject.connect(self.d3, SIGNAL('clicked()'), self.change_selector) 
         self.d2.click()
+        self.camera_device = uc480.camera(1)
+        self.camera_device.AllocImageMem()
+        self.camera_device.SetImageMem()
+        self.camera_device.SetImageSize()
+        self.camera_device.SetColorMode()
+        self.camera_device.CaptureVideo()
+        self.camera_timer = QtCore.QTimer()
+        self.connect(self.camera_timer, QtCore.SIGNAL("timeout()"), self.update_camera_image_timer)
+        self.update_camera_image()
+        self.camera_timer.start(1000)
+
+    def update_camera_image(self):
+        if hasattr(self,"camera_pixmap"):
+            self.camera_scene.removeItem(self.camera_pixmap)
+        self.camera_device.CopyImageMem()
+        self.camera_image = gray2qimage(self.camera_device.data)
+        w, h = self.camera_device.data.shape
+        pixmap_image = QtGui.QPixmap.fromImage(self.camera_image)
+        self.camera_pixmap = self.camera_scene.addPixmap(pixmap_image)
+        if hasattr(self, 'item'):
+            self.camera_pixmap.stackBefore(self.item)
+        self.camera_scene.setSceneRect(self.camera_pixmap.boundingRect())
+        self.camera_view.fitInView(self.camera_pixmap, QtCore.Qt.KeepAspectRatio)
+
+    def update_camera_image_timer(self):
+        self.update_camera_image()
+        self.camera_timer.start(1000)
 
     def change_selector(self):
         if self.d2.isChecked():
             self.scan_type = "continuous"
-            self.selector = lambda start, end: self.scene.addLine(QLineF(start, end))
+            self.selector = lambda start, end: self.camera_scene.addLine(QLineF(start, end))
         else:
             self.scan_type = "3D"
-            self.selector = lambda start, end: self.scene.addRect(QRectF(start, end))
+            self.selector = self.select_rect
+#            self.selector = lambda start, end: self.camera_scene.addRect(QRectF(start, end))
 
     def area_select(self, start, end):
-        return self.scene.addRect(QRectF(start, end))
+        return self.camera_scene.addRect(QRectF(start, end))
 
     def camera_pressed(self, event):
         self.pressed_pos = event.scenePos()
+        self.camera_moved(event)
 
     def update_config_path(self, start, end):
         start = self.convert_to_path(start)
@@ -184,19 +259,25 @@ class OCT (QtGui.QMainWindow, form_class):
         yf = max([A.y(), B.y()])
         return QPointF(x0, y0), QPointF(xf, yf)
 
+    def camera_moved(self, event):
+        if hasattr(self, "item"):
+            self.camera_scene.removeItem(self.item)
+#        start, end = self.fix_rect_points(self.pressed_pos, event.scenePos())
+        start, end = self.pressed_pos, event.scenePos()
+        self.item = self.selector(start, end)
+
     def camera_released(self, event):
         if hasattr(self, "item"):
-            self.scene.removeItem(self.item)
+            self.camera_scene.removeItem(self.item)
         self.released_pos = event.scenePos()
-        start, end = self.fix_rect_points(self.pressed_pos, event.scenePos())
+#        start, end = self.fix_rect_points(self.pressed_pos, event.scenePos())
+        start, end = self.pressed_pos, event.scenePos()
         self.update_config_path(start, end)
         self.item = self.selector(start, end)
 
-    def camera_moved(self, event):
-        if hasattr(self, "item"):
-            self.scene.removeItem(self.item)
-        start, end = self.fix_rect_points(self.pressed_pos, event.scenePos())
-        self.item = self.selector(start, end)
+    def select_rect(self, start, end):
+        start, end = self.fix_rect_points(start, end)
+        return self.camera_scene.addRect(QRectF(start, end))
 
     def setup_gst(self):
         self.fd = open("raw_data")
