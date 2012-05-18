@@ -70,9 +70,7 @@ class AcquirerProcessor(QtCore.QThread):
             parameters = {"brightness":-00, "contrast":2}
             self.data = pro.process(self.data, parameters, self.config)
             self.data_ready.emit(self.data)
-#            self.emit(QtCore.SIGNAL("Activated"))
 
- 
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
         QtGui.QWidget.__init__(self, parent, *args)
@@ -364,8 +362,7 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def start_prev(self):
         self.DataCollector = AcquirerProcessor(self.config, self )
-        self.DataCollector.data_ready.connect(self.Activated, QtCore.Qt.QueuedConnection)
-#        self.connect(self.DataCollector,QtCore.SIGNAL("Activated"), self.Activated)
+        self.DataCollector.data_ready.connect(self.add_data_and_update, QtCore.Qt.QueuedConnection)
         self.DataCollector.start()
 
     def save_processed_data(self, filename):
@@ -376,8 +373,7 @@ class OCT (QtGui.QMainWindow, form_class):
             root.create_dataset('image_%03d'%i, image.shape, image.dtype) 
         file.close()
 
-
-    def Activated(self, data):
+    def plot_in_tomography_view(self, data):
         self.image.updateImage(data)
         self.tomography.fitInView(self.image, QtCore.Qt.KeepAspectRatio)
         self.processed_data += [data]
