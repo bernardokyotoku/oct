@@ -72,24 +72,6 @@ class AcquirerProcessor(QtCore.QThread):
             self.data_ready.emit(self.data)
 #            self.emit(QtCore.SIGNAL("Activated"))
 
-#class AcquirerProcessor(QtCore.QThread):
-#    data_ready = QtCore.Signal(object)
-#    def __init__(self, config, parent=None):
-#        self.config = config
-#        QtCore.QThread.__init__(self, parent)
-##        camera = uc480.camera(1)
-#        camera.AllocImageMem()
-#        camera.SetImageMem()
-#        camera.SetImageSize()
-#        camera.SetColorMode()
-#        camera.CaptureVideo()
-#
-#
-#    def run(self):
-#        while True:
-#            camera.CopyImageMem()
-#            self.data_ready.emit(camera.data)
-##            self.emit(QtCore.SIGNAL("Activated"))
  
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
