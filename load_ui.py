@@ -95,6 +95,21 @@ class OCT (QtGui.QMainWindow, form_class):
         self.camera_device.FreeImageMem()
         self.camera_device.ExitCamera()
 
+    def image_j(self):
+        filename = self.save_tiff(self.processed_data[self.current_image])
+        import subprocess
+        subprocess.Popen(["imagej", '-o', filename], stdout = subprocess.PIPE)
+
+    def save_tiff(self, data):
+        import Image
+        data = data.T
+        image = Image.frombuffer("L" ,data.shape ,data.data, 'raw', 'L', 0 ,1)
+        import tempfile
+        import os
+        fd, filename = tempfile.mkstemp(suffix = ".tiff")
+        with os.fdopen(fd, 'w') as fp:
+            image.save(fp = fp, format = "tiff")
+        return filename
 
     def setup_select_image(self):
         QObject.connect(self.select_image, SIGNAL("valueChanged( int )"), self.update_image)
