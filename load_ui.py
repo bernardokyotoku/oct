@@ -140,8 +140,8 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def tomography_pressed(self, event):
         x = int(event.scenePos().x())
-        if hasattr(self, "tomography_line"):
-            self.tomography_scene.removeItem(self.tomography_line)
+        if hasattr(self, "tomography_line_item"):
+            self.tomography_scene.removeItem(self.tomography_line_item)
         yf = int(self.tomography_scene.sceneRect().top())
         y0 = int(self.tomography_scene.sceneRect().bottom())
         self.tomography_line = self.tomography_scene.addLine(x, y0, x, yf, QPen(Qt.Qt.yellow, 1, Qt.Qt.DotLine))
