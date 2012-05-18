@@ -210,7 +210,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.camera_timer = QtCore.QTimer()
         self.connect(self.camera_timer, QtCore.SIGNAL("timeout()"), self.update_camera_image_timer)
         self.update_camera_image()
-        self.camera_timer.start(1000)
+        self.camera_timer.start(500)
 
     def update_camera_image(self):
         if hasattr(self,"camera_pixmap"):
@@ -227,7 +227,7 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def update_camera_image_timer(self):
         self.update_camera_image()
-        self.camera_timer.start(1000)
+        self.camera_timer.start(500)
 
     def change_selector(self):
         if self.d2.isChecked():
