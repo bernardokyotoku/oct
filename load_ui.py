@@ -68,7 +68,7 @@ class AcquirerProcessor(QtCore.QThread):
 #                self.data = self.prev
             self.prev = self.data
             parameters = {"brightness":-00, "contrast":2}
-            self.data = pro.process(self.data, parameters, self.config).T
+            self.data = pro.process(self.data, parameters, self.config)
             self.data_ready.emit(self.data)
 #            self.emit(QtCore.SIGNAL("Activated"))
 
