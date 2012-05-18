@@ -76,12 +76,12 @@ class OCT (QtGui.QMainWindow, form_class):
         QtGui.QWidget.__init__(self, parent, *args)
         self.setupUi(self)
         QObject.connect(self.start, SIGNAL("clicked()"), self.start_acquisition)
-        self.windowId = self.tomography.winId()
         QObject.connect(self.imagej, SIGNAL("clicked()"), self.image_j)
+#        self.windowId = self.tomography.winId()
         self.config = pro.parse_config()
         self.appsrc = True
         self.setup_a_scan()
-        self.setup_camera()
+#        self.setup_camera()
         self.setup_tomography()
         self.setup_select_image()
         self.processed_data = []
