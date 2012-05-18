@@ -144,7 +144,7 @@ class OCT (QtGui.QMainWindow, form_class):
             self.tomography_scene.removeItem(self.tomography_line_item)
         yf = int(self.tomography_scene.sceneRect().top())
         y0 = int(self.tomography_scene.sceneRect().bottom())
-        self.tomography_line = self.tomography_scene.addLine(x, y0, x, yf, QPen(Qt.Qt.yellow, 1, Qt.Qt.DotLine))
+        self.tomography_line_item = self.tomography_scene.addLine(x, y0, x, yf, QPen(Qt.Qt.yellow, 1, Qt.Qt.DotLine))
         Y = self.processed_data[self.current_image][x]
         X = np.linspace(10,0,len(Y))
         self.curve.setData(Y,X)
