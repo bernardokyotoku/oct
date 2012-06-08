@@ -182,23 +182,6 @@ class OCT (QtGui.QMainWindow, form_class):
         self.current_image = index - 1
         self.plot_in_tomography_view(self.processed_data[self.current_image])
         
-    
-    def update_plot(self):
-        self.image.updateImage(self.data.T)
-        self.tomography.fitInView(self.image, QtCore.Qt.KeepAspectRatio)
-#        self.pixmap.update()
-#        self.overlay.show()
-#        self.s.addLine(0, 0,100, 100,Qt.QPen(Qt.Qt.blue, 3, Qt.Qt.DotLine))
-#        y = self.data.T[50]
-#        x = np.linspace(0, 20,len(y))
-#        self.label.setText(str(len(y)))
-##        y = pi*sin(x)
-#        curve = Qwt.QwtPlotCurve('y = pi*sin(x)')
-#        curve.attach(self.plot)
-#        curve.setPen(Qt.QPen(Qt.Qt.green, 1))
-#        curve.setData(y, x)
-#        self.plot.replot()
-
     def setup_camera(self):
         self.camera_view = CameraGraphicsView()
         self.widget_7.children()[0].addWidget(self.camera_view)
