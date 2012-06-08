@@ -149,7 +149,11 @@ class OCT (QtGui.QMainWindow, form_class):
         yf = int(self.tomography_scene.sceneRect().top())
         y0 = int(self.tomography_scene.sceneRect().bottom())
         self.tomography_line_item = self.tomography_scene.addLine(x, y0, x, yf, QPen(Qt.Qt.yellow, 1, Qt.Qt.DotLine))
-        Y = self.processed_data[self.current_image][x]
+        if x >= self.current_tomography_data.shape[1]:
+            x = self.current_tomography_data.shape[1] - 1
+        elif x < 0:
+            x = 0
+        Y = self.current_tomography_data[:,x]
         X = np.linspace(10,0,len(Y))
         self.curve.setData(Y,X)
         self.plot.replot()
