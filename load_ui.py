@@ -89,9 +89,11 @@ class OCT (QtGui.QMainWindow, form_class):
 
 
     def closeEvent(self, event):
-        self.camera_device.StopLiveVideo()
-        self.camera_device.FreeImageMem()
-        self.camera_device.ExitCamera()
+        pass
+#        self.camera_timer.stop()
+#        self.camera_device.StopLiveVideo()
+#        self.camera_device.FreeImageMem()
+#        self.camera_device.ExitCamera()
 
     def image_j(self):
         filename = self.save_tiff(self.processed_data[self.current_image])
