@@ -76,9 +76,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.setupUi(self)
         QObject.connect(self.start, SIGNAL("clicked()"), self.start_acquisition)
         QObject.connect(self.imagej, SIGNAL("clicked()"), self.image_j)
-#        self.windowId = self.tomography.winId()
         self.config = pro.parse_config()
-        self.appsrc = True
         self.setup_a_scan()
 #        self.setup_camera()
         self.setup_tomography()
