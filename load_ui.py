@@ -65,7 +65,6 @@ class AcquirerProcessor(QtCore.QThread):
             except Exception, e:
                 self.fd.close()
                 continue
-#                self.data = self.prev
             self.prev = self.data
             parameters = {"brightness":-00, "contrast":2}
             self.data = pro.process(self.data, parameters, self.config)
