@@ -180,8 +180,7 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def update_image(self, index):
         self.current_image = index - 1
-        self.image.updateImage(self.processed_data[self.current_image])
-        self.tomography.fitInView(self.image, QtCore.Qt.KeepAspectRatio)
+        self.plot_in_tomography_view(self.processed_data[self.current_image])
         
     
     def update_plot(self):
