@@ -172,7 +172,11 @@ class OCT (QtGui.QMainWindow, form_class):
         grid.attach(self.plot)
         grid.setPen(Qt.QPen(Qt.Qt.white, 0, Qt.Qt.DotLine))
         self.plot.setCanvasBackground(Qt.Qt.black)
-        self.widget_4.children()[0].addWidget(self.plot)
+        self.plot_holder_widget.children()[0].addWidget(self.plot)
+
+        self.curve = Qwt.QwtPlotCurve()
+        self.curve.attach(self.plot)
+        self.curve.setPen(Qt.QPen(Qt.Qt.green, 1))
 
     def update_image(self, index):
         self.current_image = index - 1
