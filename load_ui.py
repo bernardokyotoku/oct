@@ -83,7 +83,16 @@ class OCT (QtGui.QMainWindow, form_class):
         self.setup_select_image()
         self.processed_data = []
         self.current_image = 0
+        self.setup_show_scale()
 
+    def setup_show_scale(self):
+        QObject.connect(self.show_scale_checkbox, SIGNAL("stateChanged( int )"), self.show_scale_event)
+
+    def show_scale_event(self):
+        if self.show_scale_checkbox.isChecked():
+            self.make_scale()
+        else :
+            self.remove_scale()
 
     def closeEvent(self, event):
         pass
@@ -112,28 +121,26 @@ class OCT (QtGui.QMainWindow, form_class):
         QObject.connect(self.select_image, SIGNAL("valueChanged( int )"), self.update_image)
 
     def setup_tomography(self):
-        self.tomography_scene = QGraphicsScene()
-        self.tomography_scene.setBackgroundBrush(QtCore.Qt.black)
-        self.tomography.setScene(self.tomography_scene) 
-        self.image = ImageItem()
-        self.tomography_scene.addItem(self.image)
-#        self.pixmap = QPixmap()
-#        self.tomography_scene.addPixmap(self.pixmap)
+        self.tomography_scene = QGraphicsScene(0,0,640,480)
+        self.tomography_view.setScene(self.tomography_scene) 
 
-        self.curve = Qwt.QwtPlotCurve()
-        self.curve.attach(self.plot)
-        self.curve.setPen(Qt.QPen(Qt.Qt.green, 1))
         self.tomography_scene.mousePressEvent = self.tomography_pressed
         self.tomography_scene.mouseMoveEvent = self.tomography_pressed
-        self.make_ruler()
+#        self.make_scale()
+        self.plot_in_tomography_view(np.zeros((480,640)))
+        self.tomography_view.fitInView(QRectF(0,0,640,480), QtCore.Qt.KeepAspectRatio)
 #        self.tomography_scene.mouseReleaseEvent = self.camera_released
+    
 
-    def make_ruler(self):
+    def make_scale(self):
         scene_rect = self.tomography_scene.sceneRect()
         bl = scene_rect.bottomRight()
         size = QtCore.QSizeF(scene_rect.width()/4,scene_rect.height()/20)
-        self.ruler_rect = QRectF(bl - QtCore.QPointF(size.width()+size.height(),size.height()*2), size)
-        self.ruler_item = self.tomography_scene.addRect(self.ruler_rect, QPen(Qt.Qt.yellow, 1), QBrush(Qt.Qt.yellow, Qt.Qt.SolidPattern))
+        self.scale_rect = QRectF(bl - QtCore.QPointF(size.width()+size.height(),size.height()*2), size)
+        self.scale_item = self.tomography_scene.addRect(self.scale_rect, QPen(Qt.Qt.yellow, 1), QBrush(Qt.Qt.yellow, Qt.Qt.SolidPattern))
+
+    def remove_scale(self):
+        self.tomography_scene.removeItem(self.scale_item)
 
     def tomography_pressed(self, event):
         x = int(event.scenePos().x())
