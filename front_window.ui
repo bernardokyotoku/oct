@@ -45,7 +45,7 @@
        <item>
         <widget class="QWidget" name="widget_4" native="true">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
            <horstretch>1</horstretch>
            <verstretch>3</verstretch>
           </sizepolicy>
