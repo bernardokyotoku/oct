@@ -276,89 +276,6 @@ class OCT (QtGui.QMainWindow, form_class):
         start, end = self.fix_rect_points(start, end)
         return self.camera_scene.addRect(QRectF(start, end))
 
-    def setup_gst(self):
-        self.fd = open("raw_data")
-        if self.appsrc:
-            source = gst.element_factory_make('appsrc', 'source')
-            frame_rate = 10 
-            height = 240
-            width = 320
-            caps = gst.Caps("""video/x-raw-gray, 
-                             bpp=8, 
-                             endianness=1234, 
-                             width=%d, 
-                             height=%d, 
-                             framerate=(fraction)%d/1"""%(width,height,frame_rate))
-            source.set_property('caps', caps)
-            source.set_property('blocksize', width*height*1)
-            source.connect('need-data', self.needdata)
-            colorspace = gst.element_factory_make("ffmpegcolorspace")
-        else:
-            source = gst.element_factory_make("v4l2src", "vsource")
-            source.set_property("device", "/dev/video0")
-        sink = gst.element_factory_make("xvimagesink", "sink")
-        sink.set_property("force-aspect-ratio", True)
-        avimux = gst.element_factory_make("avimux","avimux")
-#        queuev = gst.element_factory_make("queue","queuev")
-#        filesink = gst.element_factory_make("filesink", "filesink")
-#        filesink.set_property('location', 'file.avi')
-
-        self.pipeline = gst.Pipeline("pipeline")
-        self.pipeline.add(source, colorspace, sink)
-#        gst.element_link_many(source, colorspace, queuev, sink)
-        gst.element_link_many(source, colorspace, sink)
-
-        bus = self.pipeline.get_bus()
-        bus.add_signal_watch()
-        bus.enable_sync_message_emission()
-        bus.connect("message", self.on_message)
-        bus.connect("sync-message::element", self.on_sync_message)
-
-    def needdata(self, src, length):
-        try:
-            self.data = self.unipickler.load()
-        except Exception, e:
-            print "end data"
-            self.pipeline.set_state(gst.STATE_NULL)
-            self.data = self.prev
-        self.prev = self.data
-        parameters = {"brightness":-00, "contrast":2}
-        self.data = pro.process(self.data, parameters, self.config)
-        src.emit('push-buffer', gst.Buffer(self.data.T.data))
-
-    def demuxer_callback(self, demuxer, pad):
-        if pad.get_property("template").name_template == "video_%02d":
-            queuev_pad = self.queuev.get_pad("sink")
-            pad.link(queuev_pad)
-
-    def on_message(self, bus, message):
-        t = message.type
-        if t == gst.MESSAGE_EOS:
-            self.pipeline.set_state(gst.STATE_NULL)
-            print "end of message"
-        elif t == gst.MESSAGE_ERROR:
-            err, debug = message.parse_error()
-            print "Error: %s" % err, debug
-            self.pipeline.set_state(gst.STATE_NULL)
-
-    def on_sync_message(self, bus, message):
-        if message.structure is None:
-            return
-        message_name = message.structure.get_name()
-        if message_name == "prepare-xwindow-id":
-            win_id = self.windowId
-            assert win_id
-            imagesink = message.src
-#            print dir(imagesink)
-            imagesink.set_xwindow_id(win_id)
-
-#            imagesink.gst_x_overlay_set_xwindow_id(win_id)
-
-    def start_prev(self):
-        self.DataCollector = AcquirerProcessor(self.config, self )
-        self.DataCollector.data_ready.connect(self.add_data_and_update, QtCore.Qt.QueuedConnection)
-        self.DataCollector.start()
-
     def save_processed_data(self, filename):
         import h5py
         file = h5py.File(filename, 'w')
@@ -375,10 +292,6 @@ class OCT (QtGui.QMainWindow, form_class):
         self.current_image = n_images - 1
         self.select_image.setMaximum(n_images)
 
-#        self.setup_gst()
-#        self.unipickler = cPickle.Unpickler(self.fd)
-#        self.pipeline.set_state(gst.STATE_PLAYING)
-#        print "should be playing"
 
     def start_acquisition(self):
         from subprocess import Popen 
