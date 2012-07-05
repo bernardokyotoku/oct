@@ -6,14 +6,14 @@ import gobject, pygst
 pygst.require('0.10')
 import gst
 from subprocess import Popen
-import processor as pro
+import processor
 import cPickle
 from configobj import ConfigObj
 from PyQt4 import QtCore, QtGui, uic
 #from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap, QSizePolicy, QPainter, QFont, QFrame, QPallete
 from PyQt4.QtGui import *
 from PyQt4.QtCore import QLine, QString, QObject, SIGNAL, QLineF, QRectF, QRect, QPoint, QPointF
-form_class, base_class = uic.loadUiType("/home/bkyotoku/Projects/oct/front_window.ui")
+form_class, base_class = uic.loadUiType("front_window2.ui")
 from numpy import *
 from PyQt4 import Qt
 import PyQt4.Qwt5 as Qwt
@@ -67,7 +67,7 @@ class AcquirerProcessor(QtCore.QThread):
                 continue
             self.prev = self.data
             parameters = {"brightness":-00, "contrast":2}
-            self.data = pro.process(self.data, parameters, self.config)
+            self.data = processor.process(self.data, parameters, self.config)
             self.data_ready.emit(self.data)
 
 class OCT (QtGui.QMainWindow, form_class):
@@ -76,7 +76,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.setupUi(self)
         QObject.connect(self.start, SIGNAL("clicked()"), self.start_acquisition)
         QObject.connect(self.imagej, SIGNAL("clicked()"), self.image_j)
-        self.config = pro.parse_config()
+        self.config = processor.parse_config()
         self.setup_a_scan()
 #        self.setup_camera()
         self.setup_tomography()
