@@ -51,7 +51,6 @@ def gray2qimage(gray):
     return result
 
 class AcquirerProcessor(QtCore.QThread):
-    data_ready = QtCore.Signal(object)
     def __init__(self, config, parent=None):
         self.config = config
         QtCore.QThread.__init__(self, parent)
@@ -68,7 +67,7 @@ class AcquirerProcessor(QtCore.QThread):
             self.prev = self.data
             parameters = {"brightness":-00, "contrast":2}
             self.data = processor.process(self.data, parameters, self.config)
-            self.data_ready.emit(self.data)
+            self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), self.data)
 
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
