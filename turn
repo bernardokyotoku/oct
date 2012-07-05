@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+from nidaqmx import DigitalOutputTask
+import sys
+daq_board = 'Dev3/'
+output_bus = 'port0/'
+device = sys.argv[1].lower()
+state = sys.argv[2]
+
+device_map = {'laser': 'line0', 
+              'detector': 'line1',
+              'galvo': 'line2'}
+try:
+    output_line = device_map[device]
+except KeyError:
+    valid_devices = ', '.join(device_map.keys())
+    print "Device invalid, valid device are" + valid_devices + '.'
+    sys.exit()
+task = DigitalOutputTask()
+task.create_channel(daq_board + output_bus + output_line)
+
+if state.upper() == 'ON':
+    task.write(True)
+elif state.upper() == 'OFF':
+    task.write(False)
+else:
+    print 'argument not valid, try "on" or "off"'
+del task
