@@ -210,7 +210,6 @@ class OCT (QtGui.QMainWindow, form_class):
             self.camera_scene.removeItem(self.camera_pixmap)
         self.camera_device.CopyImageMem()
         self.camera_image = gray2qimage(self.camera_device.data)
-        w, h = self.camera_device.data.shape
         pixmap_image = QtGui.QPixmap.fromImage(self.camera_image)
         self.camera_pixmap = self.camera_scene.addPixmap(pixmap_image)
         if hasattr(self, 'item'):
