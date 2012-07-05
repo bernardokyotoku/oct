@@ -324,11 +324,28 @@ class OCT (QtGui.QMainWindow, form_class):
         self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
 #        self.DataCollector.data_ready.connect(self.add_data_and_update, QtCore.Qt.QueuedConnection)
         self.DataCollector.start()
+
+    def save_serie(self):
+        if save_serie_dialog._exec():
+            print save_serie_dialog.save_file_path.text()
+
+save_series_form_class, save_series_base_class = uic.loadUiType("save_series.ui")
+class SaveSerieDialog(QtGui.QDialog, save_series_form_class):
+    def __init__(self,parent = None, selected = [], flag = 0, *args):
+        QtGui.QWidget.__init__(self, parent, *args)
+        self.setupUi(self)
+        self.config = processor.parse_config()
+
+    def fill_save_path(self):
+        filename = QtGui.QFileDialog.getOpenFileName()
+        self.save_file_path.setText(filename)
+
 def aspect_ratio(item):
     return float(item.height())/float(item.width())
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     main_window = OCT()
+    save_serie_dialog = SaveSerieDialog()
     main_window.show()
     app.exec_()
