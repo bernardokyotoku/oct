@@ -1,5 +1,5 @@
 import numpy as np
-import function
+import acquirer
 import logging
 from configobj import ConfigObj
 from validate import Validator
