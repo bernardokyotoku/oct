@@ -8,5 +8,5 @@ def set_voltage_to_channel(channel,voltage):
 	laserTask.clear()
 
 def turn_laser(state):
-	voltage = 5 if state == "on" else 0
-	set_voltage_to_channel("Dev1/ao2",voltage)
+	voltage = 3.5 if state == "on" else 0
+	set_voltage_to_channel("Dev3/ao3",voltage)
