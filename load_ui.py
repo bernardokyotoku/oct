@@ -313,7 +313,6 @@ class OCT (QtGui.QMainWindow, form_class):
         self.current_image = n_images - 1
         self.select_image.setMaximum(n_images)
 
-
     def start_acquisition(self):
         from subprocess import Popen 
 #        self.acquisition = Popen(["python","image_generator.py",
