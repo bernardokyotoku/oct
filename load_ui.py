@@ -17,8 +17,8 @@ form_class, base_class = uic.loadUiType("front_window2.ui")
 from numpy import *
 from PyQt4 import Qt
 import PyQt4.Qwt5 as Qwt
-from pyqtgraph.graphicsItems import ImageItem
-import uc480
+#from pyqtgraph.graphicsItems import ImageItem
+#import uc480
 from CameraGraphicsView import CameraGraphicsView
 
 
