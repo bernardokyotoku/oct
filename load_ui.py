@@ -285,8 +285,29 @@ class OCT (QtGui.QMainWindow, form_class):
         file.close()
 
     def plot_in_tomography_view(self, data):
-        self.image.updateImage(data)
-        self.tomography.fitInView(self.image, QtCore.Qt.KeepAspectRatio)
+        self.current_tomography_data = data
+        if hasattr(self, "tomography_item"):
+            self.tomography_scene.removeItem(self.tomography_item)
+        self.tomography_image = gray2qimage(data)
+#        self.resize_tomography_view()
+        self.tomography_scene.setBackgroundBrush(QtGui.QBrush(self.tomography_image))
+#        self.resize_tomography_view()
+        self.tomography_view.fitInView(self.tomography_scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
+
+    def resize_tomography_view(self):
+        holder_aspect_ratio = aspect_ratio(self.tomography_holder_widget.rect())
+        tomography_aspect_ratio = aspect_ratio(self.tomography_image)
+        if holder_aspect_ratio > tomography_aspect_ratio:
+            width = self.tomography_holder_widget.width()
+            self.tomography_view.setFixedHeight(tomography_aspect_ratio*width)
+            self.tomography_view.setFixedWidth(width)
+        else:
+            height = self.tomography_holder_widget.height()
+            self.tomography_view.setFixedWidth(height/tomography_aspect_ratio)
+            self.tomography_view.setFixedHeight(height)
+
+    def add_data_and_update(self, data):
+        self.plot_in_tomography_view(data)
         self.processed_data += [data]
         n_images = len(self.processed_data)
         self.current_image = n_images - 1
@@ -299,6 +320,12 @@ class OCT (QtGui.QMainWindow, form_class):
                                   "-a","--count=10","--rate=25",
                                   "--height=480", "--width=640"],)
         self.start_prev()
+        self.DataCollector = AcquirerProcessor(self.config, self )
+        self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
+#        self.DataCollector.data_ready.connect(self.add_data_and_update, QtCore.Qt.QueuedConnection)
+        self.DataCollector.start()
+def aspect_ratio(item):
+    return float(item.height())/float(item.width())
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
