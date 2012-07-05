@@ -316,10 +316,10 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def start_acquisition(self):
         from subprocess import Popen 
-        self.acquisition = Popen(["python","image_generator.py",
-                                  "-a","--count=10","--rate=25",
-                                  "--height=480", "--width=640"],)
-        self.start_prev()
+#        self.acquisition = Popen(["python","image_generator.py",
+#                                  "-a","--count=10","--rate=25",
+#                                  "--height=480", "--width=640"],)
+        self.acquisition = Popen(["python","doct.py", "-o","raw_data", "--scan-continuous" ],)
         self.DataCollector = AcquirerProcessor(self.config, self )
         self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
 #        self.DataCollector.data_ready.connect(self.add_data_and_update, QtCore.Qt.QueuedConnection)
