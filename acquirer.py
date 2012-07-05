@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
-import signal
+import signal as interrupt
 import subprocess
 import sys
 import cPickle
@@ -210,6 +210,7 @@ def scan(config,data,mode):
 	move_daq([0,0],config['daq'])
 	ser = serial.Serial('/dev/ttyUSB0',baudrate=115200);ser.write('oct=0\rscan=0\r');ser.close()
 	fd.close()
+        interrupt.signal(interrupt.SIGINT, signal_handler)
 
 
 def resample_d(config,data):
