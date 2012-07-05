@@ -3,7 +3,7 @@ import numpy as np
 from time import sleep
 import matplotlib.pyplot as plt
 import timeit
-X,Y,Z = 2420,1000,10
+X,Y,Z = 2420,1000,2
 scope = niScope.Scope("Dev4")
 scope.ConfigureHorizontalTiming( numPts = X,
 		sampleRate = 40000000.0,
