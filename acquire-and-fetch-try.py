@@ -4,7 +4,7 @@ from time import sleep
 import matplotlib.pyplot as plt
 import timeit
 X,Y,Z = 2420,1000,2
-scope = niScope.Scope("Dev4")
+scope = niScope.Scope("Dev2")
 scope.ConfigureHorizontalTiming( numPts = X,
 		sampleRate = 40000000.0,
 		enforceRealtime = True,
