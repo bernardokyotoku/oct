@@ -1,11 +1,6 @@
 #!/usr/bin/env python
-import sys
-import math
-import numpy as np
-import gobject
-from subprocess import Popen
+import sys, subprocess, cPickle, numpy as np
 import processor
-import cPickle
 from configobj import ConfigObj
 from PyQt4 import QtCore, QtGui, uic
 #from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap, QSizePolicy, QPainter, QFont, QFrame, QPallete
@@ -103,7 +98,6 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def image_j(self):
         filename = self.save_tiff(self.processed_data[self.current_image])
-        import subprocess
         subprocess.Popen(["imagej", '-o', filename], stdout = subprocess.PIPE)
 
     def save_tiff(self, data):
@@ -315,11 +309,10 @@ class OCT (QtGui.QMainWindow, form_class):
         self.select_image.setMaximum(n_images)
 
     def start_acquisition(self):
-        from subprocess import Popen 
 #        self.acquisition = Popen(["python","image_generator.py",
 #                                  "-a","--count=10","--rate=25",
 #                                  "--height=480", "--width=640"],)
-        self.acquisition = Popen(["python","doct.py", "-o","raw_data", "--scan-continuous" ],)
+        self.acquisition = subprocess.Popen(["python","doct.py", "-o","raw_data", "--scan-continuous" ],)
         self.DataCollector = AcquirerProcessor(self.config, self )
         self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
 #        self.DataCollector.data_ready.connect(self.add_data_and_update, QtCore.Qt.QueuedConnection)
