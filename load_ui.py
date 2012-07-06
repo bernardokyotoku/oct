@@ -18,7 +18,10 @@ from numpy import *
 from PyQt4 import Qt
 import PyQt4.Qwt5 as Qwt
 #from pyqtgraph.graphicsItems import ImageItem
-#import uc480
+try:
+    import ueye
+except ImportError:
+    sys.stderr.write("Cannot import ueye modules")
 from CameraGraphicsView import CameraGraphicsView
 
 
