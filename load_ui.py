@@ -2,9 +2,7 @@
 import sys
 import math
 import numpy as np
-import gobject, pygst
-pygst.require('0.10')
-import gst
+import gobject
 from subprocess import Popen
 import processor
 import cPickle

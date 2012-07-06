@@ -6,7 +6,6 @@
 
 Pixel formats you a looking for this http://fourcc.org/
 '''
-import gst
 import gobject
 gobject.threads_init()
 import logging
