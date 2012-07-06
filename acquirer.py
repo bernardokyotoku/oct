@@ -15,6 +15,8 @@ from PIL import Image
 
 interrupted = False
 
+logger = logging.getLogger(__name__)
+
 def signal_handler(signal, frame):
     print "interrupt"
     global interrupted
@@ -194,7 +196,7 @@ def scan(config,data,mode):
 
     global interrupted
     interrupted = False
-    print config['filename']
+    logger.info("Writing data in %s"%config['filename'])
     with open(config['filename'],'w',0) as fd:
         interrupt.signal(interrupt.SIGINT, signal_handler)
         while path.has_next() and not interrupted:

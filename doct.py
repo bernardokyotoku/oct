@@ -35,17 +35,16 @@ validator = Validator({'log':acquirer.log_type,'float':float})
 config = ConfigObj('config.ini',configspec='configspec.ini')
 if not config.validate(validator):
     raise Exception('config.ini does not validate with configspec.ini.')
-logging.basicConfig(filename='oct.log',level=config['log'])
+logging.basicConfig(level=config['log'])
 
 data = []
-if arg.filename:
-    config['filename'] = arg.filename if arg.filename else 'data.dat'
-
+config['filename'] = arg.filename
+logging.info('Writing data in %s'%config['filename'])
     
 for i in flags:
     function_name = i.replace('-','_')
     if getattr(arg, function_name):
-        print function_name
+        logging.info("Executing %s"%function_name)
         fun = getattr(acquirer, function_name)
         data = fun(config, data)    
 
