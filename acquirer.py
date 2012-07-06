@@ -205,11 +205,12 @@ def scan(config,data,mode):
             daq = configure_daq(mode,config['daq'])
             #need to test if array ordering is ok
             daq.write(signal)
-            scope.InitiateAcquisition()
-            scope.fetch_sample_signal(tomogram)
             try:
+                scope.InitiateAcquisition()
+                scope.fetch_sample_signal(tomogram)
                 cPickle.dump(tomogram, fd, cPickle.HIGHEST_PROTOCOL)
-            except Exception:
+            except Exception, msg:
+                logger.exception(msg)
                 del daq
                 signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
                 break
