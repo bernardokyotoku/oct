@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, subprocess, cPickle, numpy as np
+import sys, subprocess, cPickle, numpy as np, Image, tempfile, os
 import processor
 from configobj import ConfigObj
 from PyQt4 import QtCore, QtGui, uic
@@ -101,11 +101,8 @@ class OCT (QtGui.QMainWindow, form_class):
         subprocess.Popen(["imagej", '-o', filename], stdout = subprocess.PIPE)
 
     def save_tiff(self, data):
-        import Image
         data = data.T
         image = Image.frombuffer("L" ,data.shape ,data.data, 'raw', 'L', 0 ,1)
-        import tempfile
-        import os
         fd, filename = tempfile.mkstemp(suffix = ".tiff")
         with os.fdopen(fd, 'w') as fp:
             image.save(fp = fp, format = "tiff")
