@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+import serial
+def on():
+    ser = serial.Serial('/dev/ttyUSB0',baudrate=115200)
+    ser.write('oct=1\r')
+    #ser.write('scan=1\r')
+    ser.close()
+
+def off():
+    ser = serial.Serial('/dev/ttyUSB0',baudrate=115200)
+    ser.write('oct=0\rscan=0\r')
+    ser.close()
+if __name__ == "__main__":
+    import sys
+    on() if sys.argv[1] == "on" else off()
+
