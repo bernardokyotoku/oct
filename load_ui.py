@@ -195,7 +195,7 @@ class OCT (QtGui.QMainWindow, form_class):
         QObject.connect(self.d2, SIGNAL('clicked()'), self.change_selector) 
         QObject.connect(self.d3, SIGNAL('clicked()'), self.change_selector) 
         self.d2.click()
-        self.camera_device = uc480.camera(1)
+        self.camera_device = ueye.camera(1)
         self.camera_device.AllocImageMem()
         self.camera_device.SetImageMem()
         self.camera_device.SetImageSize()
