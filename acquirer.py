@@ -199,6 +199,7 @@ def scan(config,data,mode):
     interrupted = False
     logger.info("Writing data in %s"%config['filename'])
     with open(config['filename'],'w',0) as fd:
+        pickler = cPickle.Pickler(fd,cPickle.HIGHEST_PROTOCOL)
         interrupt.signal(interrupt.SIGINT, signal_handler)
         while path.has_next() and not interrupted:
             tomogram = memory.next()
@@ -211,7 +212,7 @@ def scan(config,data,mode):
                 logger.debug("Std devition before fetch %.2e"%np.std(tomogram))
                 scope.fetch_sample_signal(tomogram)
                 logger.debug("Std devition after fetch %.2e"%np.std(tomogram))
-                cPickle.dump(tomogram, fd, cPickle.HIGHEST_PROTOCOL)
+                pickler.dump(tomogram)
             except Exception, msg:
                 logger.exception(msg)
                 del daq
@@ -220,6 +221,7 @@ def scan(config,data,mode):
             del daq
             signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
             move_daq(signal,config['daq'])
+        fd.close()
         move_daq([0,0],config['daq'])
         return tomogram
 
