@@ -62,11 +62,11 @@ class AcquirerProcessor(QtCore.QThread):
         while True:
             try:
                 logger.debug("data_collector is waiting for data.")
-                self.data = self.unipickler.load()
-            except Exception, e:
+                self.data = self.unpickler.load()
+            except EOFError, e:
                 logger.debug("End of file.")
                 self.fd.close()
-                continue
+                return
             self.prev = self.data
             logger.debug("std dev %.2e"%np.std(self.data))
             parameters = {"brightness":-00, "contrast":2}
