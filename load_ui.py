@@ -38,7 +38,6 @@ def gray2qimage(gray):
     http://www.mail-archive.com/pyqt@riverbankcomputing.com/msg17961.html"""
     if len(gray.shape) != 2:
         raise ValueError("gray2QImage can only convert 2D arrays")
-
     gray = np.require(gray, np.uint8, 'C')
 
     h, w = gray.shape
