@@ -15,6 +15,7 @@ from PIL import Image
 
 interrupted = False
 
+logging.basicConfig(level = logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 def signal_handler(signal, frame):
@@ -129,7 +130,7 @@ def configure_scope(mode,config):
         print "niScope missing, continuing anyway"
     def fetch(self,memory):
         ch = config['VerticalSample']['channelList']
-        print "fetching channel:", ch
+        logger.info("Fetching channel: %s"%ch)
         self.Fetch(ch,memory)
     niScope.Scope.fetch_sample_signal = fetch
     scope = niScope.Scope(config['dev'])
@@ -207,7 +208,9 @@ def scan(config,data,mode):
             daq.write(signal)
             try:
                 scope.InitiateAcquisition()
+                logger.debug("Std devition before fetch %.2e"%np.std(tomogram))
                 scope.fetch_sample_signal(tomogram)
+                logger.debug("Std devition after fetch %.2e"%np.std(tomogram))
                 cPickle.dump(tomogram, fd, cPickle.HIGHEST_PROTOCOL)
             except Exception, msg:
                 logger.exception(msg)
