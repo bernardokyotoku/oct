@@ -88,6 +88,12 @@ class OCT (QtGui.QMainWindow, form_class):
         self.processed_data = []
         self.current_image = 0
         self.setup_show_scale()
+        self.setup_data_collector()
+
+    def setup_data_collector(self):
+        self.DataCollector = AcquirerProcessor(self)
+        self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
+        self.DataCollector.start()
 
     def setup_show_scale(self):
         QObject.connect(self.show_scale_checkbox, SIGNAL("stateChanged( int )"), self.show_scale_event)
@@ -320,10 +326,6 @@ class OCT (QtGui.QMainWindow, form_class):
 #                                  "-a","--count=10","--rate=25",
 #                                  "--height=480", "--width=640"],)
         self.acquisition = subprocess.Popen(["python","doct.py", "-o","raw_data", "--scan-continuous" ],)
-        self.DataCollector = AcquirerProcessor(self.config, self )
-        self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
-#        self.DataCollector.data_ready.connect(self.add_data_and_update, QtCore.Qt.QueuedConnection)
-        self.DataCollector.start()
 
     def save_serie(self):
         if save_serie_dialog._exec():
