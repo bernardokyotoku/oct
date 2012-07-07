@@ -56,10 +56,10 @@ class AcquirerProcessor(QtCore.QThread):
 
     def run(self):
         filename = self.config['raw_file']
-        self.unipickler = cPickle.Unpickler(self.fd)
         while not self.fd.closed:
         self.fd = open(filename)
         logger.debug("Creating unpickler")
+        self.unpickler = cPickle.Unpickler(self.fd)
             try:
                 logger.debug("data_collector is waiting for data.")
                 self.data = self.unipickler.load()
