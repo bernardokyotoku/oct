@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, subprocess, cPickle, numpy as np, Image, tempfile, os
+import sys, subprocess, cPickle, numpy as np, Image, tempfile, os, logging
 import processor
 from configobj import ConfigObj
 from PyQt4 import QtCore, QtGui, uic
