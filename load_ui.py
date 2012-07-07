@@ -17,6 +17,9 @@ except ImportError:
     sys.stderr.write("Cannot import ueye modules")
 from CameraGraphicsView import CameraGraphicsView
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.debug("test")
 
 #    def showEvent(self, event):
 #        self.timer = self.startTimer(50)
@@ -55,14 +58,20 @@ class AcquirerProcessor(QtCore.QThread):
         self.fd = open("raw_data")
         self.unipickler = cPickle.Unpickler(self.fd)
         while not self.fd.closed:
+        logger.debug("Creating unpickler")
             try:
+                logger.debug("data_collector is waiting for data.")
                 self.data = self.unipickler.load()
             except Exception, e:
+                logger.debug("End of file.")
                 self.fd.close()
                 continue
             self.prev = self.data
+            logger.debug("std dev %.2e"%np.std(self.data))
             parameters = {"brightness":-00, "contrast":2}
             self.data = processor.process(self.data, parameters, self.config)
+            logger.debug("Emitting data ready to showing")
+            logger.debug("std dev processed %.2e"%np.std(self.data))
             self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), self.data)
 
 class OCT (QtGui.QMainWindow, form_class):
@@ -299,6 +308,7 @@ class OCT (QtGui.QMainWindow, form_class):
             self.tomography_view.setFixedHeight(height)
 
     def add_data_and_update(self, data):
+        logger.debug("std dev %.2e"%np.std(data))
         self.plot_in_tomography_view(data)
         self.processed_data += [data]
         n_images = len(self.processed_data)
