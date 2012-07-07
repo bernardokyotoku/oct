@@ -323,10 +323,8 @@ class OCT (QtGui.QMainWindow, form_class):
         self.select_image.setMaximum(n_images)
 
     def start_acquisition(self):
-#        self.acquisition = Popen(["python","image_generator.py",
-#                                  "-a","--count=10","--rate=25",
-#                                  "--height=480", "--width=640"],)
-        self.acquisition = subprocess.Popen(["python","doct.py", "-o","raw_data", "--scan-continuous" ],)
+        cmd = ["python", "doct.py", "-o", self.config['raw_file'], "--scan-single" ]
+        self.acquisition = subprocess.Popen(cmd)
 
     def save_serie(self):
         if save_serie_dialog._exec():
