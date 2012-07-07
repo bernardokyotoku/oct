@@ -50,8 +50,8 @@ def gray2qimage(gray):
     return result
 
 class AcquirerProcessor(QtCore.QThread):
-    def __init__(self, config, parent=None):
-        self.config = config
+    def __init__(self, parent=None):
+        self.config = parent.config
         QtCore.QThread.__init__(self, parent)
 
     def run(self):
