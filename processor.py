@@ -53,11 +53,11 @@ def resample(raw_data,config,rsp_data=None,axis=0):
     return rsp_data
 
 def process(data,parameters,config):
-    #data = resample(data.T, config, axis=0).T
-    data = transform(data)
-    #data = 10*np.log(data)
-    data = renormalize(data,parameters)
-    data = np.ascontiguousarray(np.uint8(data))
+    data = resample(data, config)
+    data = transform(data.T).T
+    data = 10*np.log(data)
+#    data = renormalize(data,parameters)
+#    data = np.ascontiguousarray(np.uint8(data))
     return data
 
 def parse_arguments():
