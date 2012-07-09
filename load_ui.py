@@ -11,6 +11,10 @@ from numpy import *
 from PyQt4 import Qt
 import PyQt4.Qwt5 as Qwt
 #from pyqtgraph.graphicsItems import ImageItem
+import matplotlib
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.figure import Figure
 try:
     import ueye
 except ImportError:
@@ -127,6 +131,13 @@ class OCT (QtGui.QMainWindow, form_class):
         QObject.connect(self.select_image, SIGNAL("valueChanged( int )"), self.update_image)
 
     def setup_tomography(self):
+        self.zlim = [100, 240]
+        self.dpi = 80
+        self.fig = Figure((7.8, 5.6), dpi=self.dpi)
+        self.canvas = FigureCanvas(self.fig)
+        self.canvas.setParent(self.tomography_view)
+        self.axes = self.fig.add_subplot(111)
+
         self.tomography_scene = QGraphicsScene(0,0,640,480)
         self.tomography_view.setScene(self.tomography_scene) 
 
@@ -293,13 +304,18 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def plot_in_tomography_view(self, data):
         self.current_tomography_data = data
-        if hasattr(self, "tomography_item"):
-            self.tomography_scene.removeItem(self.tomography_item)
-        self.tomography_image = gray2qimage(data)
+        logger.debug("zlim in plot_in_tomography_view %s"%str(self.zlim))
+        self.axes.clear()        
+        self.axes.imshow(self.current_tomography_data,vmin=self.zlim[0],vmax=self.zlim[1])
+        self.canvas.draw()
+
+#        if hasattr(self, "tomography_item"):
+#            self.tomography_scene.removeItem(self.tomography_item)
+#        self.tomography_image = gray2qimage(data)
 #        self.resize_tomography_view()
-        self.tomography_scene.setBackgroundBrush(QtGui.QBrush(self.tomography_image))
+#        self.tomography_scene.setBackgroundBrush(QtGui.QBrush(self.tomography_image))
 #        self.resize_tomography_view()
-        self.tomography_view.fitInView(self.tomography_scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
+#        self.tomography_view.fitInView(self.tomography_scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
 
     def resize_tomography_view(self):
         holder_aspect_ratio = aspect_ratio(self.tomography_holder_widget.rect())
