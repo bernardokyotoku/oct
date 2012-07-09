@@ -86,13 +86,37 @@ class OCT (QtGui.QMainWindow, form_class):
         QObject.connect(self.imagej, SIGNAL("clicked()"), self.image_j)
         self.config = processor.parse_config()
         self.setup_a_scan()
-#        self.setup_camera()
+        self.setup_camera()
         self.setup_tomography()
         self.setup_select_image()
         self.processed_data = []
         self.current_image = 0
         self.setup_show_scale()
         self.setup_data_collector()
+
+    def camera_button(self):
+        if self.start_camera_button.text() == "Start Camera":
+            logger.info("Starting camera.")
+            self.start_camera()
+            self.start_camera_button.setText("Stop Camera")
+        else:
+            logger.info("Stop camera.")
+            self.stop_camera()
+            self.start_camera_button.setText("Start Camera")
+    def start_camera(self):
+        self.camera_device = ueye.camera(1)
+        self.camera_device.AllocImageMem()
+        self.camera_device.SetImageMem()
+        self.camera_device.SetImageSize()
+        self.camera_device.SetColorMode()
+        self.camera_device.CaptureVideo()
+        self.camera_timer = QtCore.QTimer()
+        self.connect(self.camera_timer, 
+                     QtCore.SIGNAL("timeout()"), 
+                     self.update_camera_image_timer)
+        self.update_camera_image()
+        self.camera_timer.start(100)
+
 
     def setup_data_collector(self):
         self.DataCollector = AcquirerProcessor(self)
@@ -110,10 +134,12 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def closeEvent(self, event):
         pass
-#        self.camera_timer.stop()
-#        self.camera_device.StopLiveVideo()
-#        self.camera_device.FreeImageMem()
-#        self.camera_device.ExitCamera()
+   
+    def stop_camera(self):
+        self.camera_timer.stop()
+        self.camera_device.StopLiveVideo()
+        self.camera_device.FreeImageMem()
+        self.camera_device.ExitCamera()
 
     def image_j(self):
         filename = self.save_tiff(self.processed_data[self.current_image])
@@ -212,16 +238,7 @@ class OCT (QtGui.QMainWindow, form_class):
         QObject.connect(self.d2, SIGNAL('clicked()'), self.change_selector) 
         QObject.connect(self.d3, SIGNAL('clicked()'), self.change_selector) 
         self.d2.click()
-        self.camera_device = ueye.camera(1)
-        self.camera_device.AllocImageMem()
-        self.camera_device.SetImageMem()
-        self.camera_device.SetImageSize()
-        self.camera_device.SetColorMode()
-        self.camera_device.CaptureVideo()
-        self.camera_timer = QtCore.QTimer()
-        self.connect(self.camera_timer, QtCore.SIGNAL("timeout()"), self.update_camera_image_timer)
-        self.update_camera_image()
-        self.camera_timer.start(500)
+
 
     def update_camera_image(self):
         if hasattr(self,"camera_pixmap"):
