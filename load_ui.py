@@ -118,6 +118,7 @@ class OCT (QtGui.QMainWindow, form_class):
             logger.info("Stop camera.")
             self.stop_camera()
             self.start_camera_button.setText("Start Camera")
+
     def start_camera(self):
         self.camera_device = ueye.camera(1)
         self.camera_device.AllocImageMem()
@@ -132,11 +133,16 @@ class OCT (QtGui.QMainWindow, form_class):
         self.update_camera_image()
         self.camera_timer.start(100)
 
+    def update_saturation(self, new_value):
+        self.zlim = [self.black_spinbox.value(), self.saturation_spinbox.value()]
+        self.plot_in_tomography_view(self.processed_data[self.current_image])
+       
+    def hello(self):
+        logger.debug("HELO")
 
     def setup_data_collector(self):
         self.DataCollector = AcquirerProcessor(self)
         self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
-        self.DataCollector.start()
 
     def setup_show_scale(self):
         QObject.connect(self.show_scale_checkbox, SIGNAL("stateChanged( int )"), self.show_scale_event)
@@ -185,7 +191,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.tomography_scene.mousePressEvent = self.tomography_pressed
         self.tomography_scene.mouseMoveEvent = self.tomography_pressed
 #        self.make_scale()
-        self.plot_in_tomography_view(np.zeros((480,640)))
+#        self.plot_in_tomography_view(np.zeros((480,640)))
         self.tomography_view.fitInView(QRectF(0,0,640,480), QtCore.Qt.KeepAspectRatio)
 #        self.tomography_scene.mouseReleaseEvent = self.camera_released
     
@@ -335,6 +341,7 @@ class OCT (QtGui.QMainWindow, form_class):
         file.close()
 
     def plot_in_tomography_view(self, data):
+        logger.debug("ploting data %s, mean %.2e, min $.2e, max %.2e"%(str(data.shape),np.min(data),np.max(data)))
         self.current_tomography_data = data
         logger.debug("zlim in plot_in_tomography_view %s"%str(self.zlim))
         self.axes.clear()        
@@ -362,7 +369,9 @@ class OCT (QtGui.QMainWindow, form_class):
             self.tomography_view.setFixedHeight(height)
 
     def add_data_and_update(self, data):
-        logger.debug("std dev %.2e"%np.std(data))
+        logger.debug("std dev %.2e, min %.2e, max %.2e"%(np.std(data), np.min(data), np.max(data)))
+        self.black_spinbox.setValue(np.min(data))
+        self.saturation_spinbox.setValue(np.max(data))
         self.plot_in_tomography_view(data)
         self.processed_data += [data]
         n_images = len(self.processed_data)
