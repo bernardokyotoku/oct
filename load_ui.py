@@ -379,6 +379,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.select_image.setMaximum(n_images)
 
     def start_acquisition(self):
+        self.DataCollector.start()
         cmd = ["python", "doct.py", "-o", self.config['raw_file'], "--scan-single" ]
         self.acquisition = subprocess.Popen(cmd)
 
