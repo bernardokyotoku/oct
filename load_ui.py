@@ -82,8 +82,6 @@ class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
         QtGui.QWidget.__init__(self, parent, *args)
         self.setupUi(self)
-        QObject.connect(self.start, SIGNAL("clicked()"), self.start_acquisition)
-        QObject.connect(self.imagej, SIGNAL("clicked()"), self.image_j)
         self.config = processor.parse_config()
         self.setup_a_scan()
         self.setup_camera()
@@ -93,6 +91,23 @@ class OCT (QtGui.QMainWindow, form_class):
         self.current_image = 0
         self.setup_show_scale()
         self.setup_data_collector()
+        self.setup_signals()
+
+    def setup_signals(self):
+        signals = [
+        ('start',              "clicked()",            'start_acquisition'),
+        ('imagej',             "clicked()",            'image_j'),
+        ('saturation_spinbox', "valueChanged(double)", 'update_saturation'),
+        ('start_camera_button',"clicked()",            'camera_button'),
+        ('black_spinbox',      "valueChanged(double)", 'update_saturation'),
+        ]
+        def connect(blob): 
+            QObject.connect(
+                    getattr(self, blob[0]), 
+                    SIGNAL(blob[1]), 
+                    getattr(self, blob[2])
+                    )
+        map(connect, signals)
 
     def camera_button(self):
         if self.start_camera_button.text() == "Start Camera":
