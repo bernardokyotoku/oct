@@ -9,7 +9,7 @@ from configobj import ConfigObj
 from validate import Validator
 from time import sleep
 from multiprocessing import Process, Queue
-from path import *
+from path import Path
 from scipy import interpolate
 from PIL import Image
 
