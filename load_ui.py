@@ -11,7 +11,7 @@ from numpy import *
 from PyQt4 import Qt
 import PyQt4.Qwt5 as Qwt
 #from pyqtgraph.graphicsItems import ImageItem
-import matplotlib
+import matplotlib, matplotlib.pyplot as plt, matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
@@ -20,21 +20,11 @@ try:
 except ImportError:
     sys.stderr.write("Cannot import ueye modules")
 from CameraGraphicsView import CameraGraphicsView
+import acquirer
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.debug("test")
-
-#    def showEvent(self, event):
-#        self.timer = self.startTimer(50)
-#        self.counter = 0
-#
-#    def timerEvent(self, event):
-#        self.counter += 1
-#        self.update()
-#        if self.counter == 60:
-#            self.killTimer(self.timer)
-#            self.hide()
 
 def gray2qimage(gray):
     """Convert the 2D numpy array `gray` into a 8-bit QImage with a gray
@@ -78,14 +68,40 @@ class AcquirerProcessor(QtCore.QThread):
             logger.debug("std dev processed %.2e"%np.std(self.data))
             self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), self.data)
 
+class AcquirerProcessor2(QtCore.QThread):
+    def __init__(self, parent = None):
+        self.config = parent.config
+        QtCore.QThread.__init__(self, parent)
+        self.connect(parent, 
+                     QtCore.SIGNAL("stop_acquistion()"), 
+                     self.stop_acquisition)
+
+    def run(self):
+        acquirer.continue_scan = True
+        self.data = []
+        acquirer.scan(self.config, self.data, "continuous", self.data_ready)
+
+    def data_ready(self, data):   
+        self.data = data
+        logger.debug("std dev %.2e"%np.std(self.data))
+        parameters = {"brightness":-00, "contrast":2}
+        self.data = processor.process(self.data, parameters, self.config)
+        logger.debug("Emitting data ready to showing")
+        logger.debug("std dev processed %.2e"%np.std(self.data))
+        self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), self.data)
+
+    def stop_acquisition(self):
+        acquirer.continue_scan = False
+
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
         QtGui.QWidget.__init__(self, parent, *args)
         self.setupUi(self)
         self.config = processor.parse_config()
-        self.setup_a_scan()
+        self.setup_plot()
+#        self.setup_tomography()
+#        self.setup_a_scan()
         self.setup_camera()
-        self.setup_tomography()
         self.setup_select_image()
         self.processed_data = []
         self.current_image = 0
@@ -95,11 +111,12 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def setup_signals(self):
         signals = [
-        ('start',              "clicked()",            'start_acquisition'),
-        ('imagej',             "clicked()",            'image_j'),
-        ('saturation_spinbox', "valueChanged(double)", 'update_saturation'),
-        ('start_camera_button',"clicked()",            'camera_button'),
-        ('black_spinbox',      "valueChanged(double)", 'update_saturation'),
+        ('start',               "clicked()",            'start_acquisition'),
+        ('imagej',              "clicked()",            'image_j'),
+        ('saturation_spinbox',  "valueChanged(double)", 'update_saturation'),
+        ('start_camera_button', "clicked()",            'camera_button'),
+        ('black_spinbox',       "valueChanged(double)", 'update_saturation'),
+        ('stop_button',         "clicked()",            'setup_plot'),
         ]
         def connect(blob): 
             QObject.connect(
@@ -118,6 +135,12 @@ class OCT (QtGui.QMainWindow, form_class):
             logger.info("Stop camera.")
             self.stop_camera()
             self.start_camera_button.setText("Start Camera")
+
+    def stop_acquisition(self):
+        self.emit(QtCore.SIGNAL("stop_acquistion()"))
+        QObject.disconnect(self.start,SIGNAL("clicked()"),self.stop_acquisition),
+        QObject.connect(self.start,SIGNAL("clicked()"),self.start_acquisition),
+        self.start.setText("Start Acquisition")
 
     def start_camera(self):
         self.camera_device = ueye.camera(1)
@@ -141,7 +164,7 @@ class OCT (QtGui.QMainWindow, form_class):
         logger.debug("HELO")
 
     def setup_data_collector(self):
-        self.DataCollector = AcquirerProcessor(self)
+        self.DataCollector = AcquirerProcessor2(self)
         self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
 
     def setup_show_scale(self):
@@ -176,23 +199,47 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def setup_select_image(self):
         QObject.connect(self.select_image, SIGNAL("valueChanged( int )"), self.update_image)
+    def setup_plot(self):
+        logger.debug("Setting plot up")
+        self.dpi = 80
+#        width = float(self.tomography_holder_widget.width())/self.dpi
+#        height = float(self.tomography_holder_widget.height())/self.dpi
+        self.width = 5.4
+        height = 5.3
+        self.fig = plt.figure(figsize = (self.width, height), dpi=self.dpi)
+        self.gridspec = gridspec.GridSpec(1, 2, left = 0.05, width_ratios=[3,1])
+        self.canvas = FigureCanvas(self.fig)
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.canvas)
+        self.tomography_holder_widget.setLayout(vbox)
+        self.canvas.setParent(self.tomography_holder_widget)
+        self.canvas.mpl_connect('button_release_event', self.plot_button_released)
+        self.setup_tomography()
+        self.setup_a_scan()
+        self.canvas.draw()
+
+    def plot_button_released(self, event):
+        if event.inaxes is self.tomography_ax:
+            logger.debug("tomography axis clicked")
+        elif event.inaxes is self.a_scan_ax:
+            logger.debug("a_scan axis clicked")
+        else:
+            logger.debug("Button released X:%f, Y%f, axis %s"%(event.xdata, event.ydata, str(event.inaxes)))
 
     def setup_tomography(self):
-        self.zlim = [100, 240]
-        self.dpi = 80
-        self.fig = Figure((7.8, 5.6), dpi=self.dpi)
-        self.canvas = FigureCanvas(self.fig)
-        self.canvas.setParent(self.tomography_view)
-        self.axes = self.fig.add_subplot(111)
+        self.zlim = [None, None]
+        self.tomography_ax = plt.subplot(self.gridspec[0])
+        self.tomography_ax.plot()
+       #self.fig.add_subplot(121)
 
-        self.tomography_scene = QGraphicsScene(0,0,640,480)
-        self.tomography_view.setScene(self.tomography_scene) 
+#        self.tomography_scene = QGraphicsScene(0,0,640,480)
+#        self.tomography_view.setScene(self.tomography_scene) 
 
-        self.tomography_scene.mousePressEvent = self.tomography_pressed
-        self.tomography_scene.mouseMoveEvent = self.tomography_pressed
+#        self.tomography_scene.mousePressEvent = self.tomography_pressed
+#        self.tomography_scene.mouseMoveEvent = self.tomography_pressed
 #        self.make_scale()
 #        self.plot_in_tomography_view(np.zeros((480,640)))
-        self.tomography_view.fitInView(QRectF(0,0,640,480), QtCore.Qt.KeepAspectRatio)
+#        self.tomography_view.fitInView(QRectF(0,0,640,480), QtCore.Qt.KeepAspectRatio)
 #        self.tomography_scene.mouseReleaseEvent = self.camera_released
     
 
@@ -223,24 +270,26 @@ class OCT (QtGui.QMainWindow, form_class):
         self.plot.replot()
 
     def setup_a_scan(self):
-        self.plot = Qwt.QwtPlot()
-        size_policy = QSizePolicy()
-        size_policy.setHorizontalStretch(1) 
-        size_policy.setHorizontalPolicy(size_policy.Preferred) 
-        size_policy.setVerticalPolicy(size_policy.Preferred) 
-        self.plot.setSizePolicy(size_policy)
-#        self.plot.enableAxis(Qwt.QwtPlot.yLeft, False)
-        self.plot.enableAxis(Qwt.QwtPlot.xBottom, False)
-
-        grid = Qwt.QwtPlotGrid()
-        grid.attach(self.plot)
-        grid.setPen(Qt.QPen(Qt.Qt.white, 0, Qt.Qt.DotLine))
-        self.plot.setCanvasBackground(Qt.Qt.black)
-        self.plot_holder_widget.children()[0].addWidget(self.plot)
-
-        self.curve = Qwt.QwtPlotCurve()
-        self.curve.attach(self.plot)
-        self.curve.setPen(Qt.QPen(Qt.Qt.green, 1))
+        self.a_scan_ax = plt.subplot(self.gridspec[1])#self.fig.add_subplot(122)
+        self.a_scan_ax.plot()
+#        self.plot = Qwt.QwtPlot()
+#        size_policy = QSizePolicy()
+#        size_policy.setHorizontalStretch(1) 
+#        size_policy.setHorizontalPolicy(size_policy.Preferred) 
+#        size_policy.setVerticalPolicy(size_policy.Preferred) 
+#        self.plot.setSizePolicy(size_policy)
+##        self.plot.enableAxis(Qwt.QwtPlot.yLeft, False)
+#        self.plot.enableAxis(Qwt.QwtPlot.xBottom, False)
+#
+#        grid = Qwt.QwtPlotGrid()
+#        grid.attach(self.plot)
+#        grid.setPen(Qt.QPen(Qt.Qt.white, 0, Qt.Qt.DotLine))
+#        self.plot.setCanvasBackground(Qt.Qt.black)
+#        self.plot_holder_widget.children()[0].addWidget(self.plot)
+#
+#        self.curve = Qwt.QwtPlotCurve()
+#        self.curve.attach(self.plot)
+#        self.curve.setPen(Qt.QPen(Qt.Qt.green, 1))
 
     def update_image(self, index):
         self.current_image = index - 1
@@ -344,8 +393,8 @@ class OCT (QtGui.QMainWindow, form_class):
         logger.debug("ploting data %s, mean %.2e, min $.2e, max %.2e"%(str(data.shape),np.min(data),np.max(data)))
         self.current_tomography_data = data
         logger.debug("zlim in plot_in_tomography_view %s"%str(self.zlim))
-        self.axes.clear()        
-        self.axes.imshow(self.current_tomography_data,vmin=self.zlim[0],vmax=self.zlim[1])
+        self.tomography_ax.clear()        
+        self.tomography_ax.imshow(self.current_tomography_data,vmin=self.zlim[0],vmax=self.zlim[1])
         self.canvas.draw()
 
 #        if hasattr(self, "tomography_item"):
@@ -370,18 +419,21 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def add_data_and_update(self, data):
         logger.debug("std dev %.2e, min %.2e, max %.2e"%(np.std(data), np.min(data), np.max(data)))
-        self.black_spinbox.setValue(np.min(data))
-        self.saturation_spinbox.setValue(np.max(data))
-        self.plot_in_tomography_view(data)
         self.processed_data += [data]
         n_images = len(self.processed_data)
         self.current_image = n_images - 1
         self.select_image.setMaximum(n_images)
+        self.plot_in_tomography_view(data)
+        self.saturation_spinbox.setValue(np.max(data))
+        self.black_spinbox.setValue(np.min(data))
 
     def start_acquisition(self):
         self.DataCollector.start()
-        cmd = ["python", "doct.py", "-o", self.config['raw_file'], "--scan-single" ]
-        self.acquisition = subprocess.Popen(cmd)
+        QObject.disconnect(self.start,SIGNAL("clicked()"),self.start_acquisition),
+        QObject.connect(self.start,SIGNAL("clicked()"),self.stop_acquisition),
+        self.start.setText("Stop Acquisition")
+#        cmd = ["python", "doct.py", "-o", self.config['raw_file'], "--scan-single" ]
+#        self.acquisition = subprocess.Popen(cmd)
 
     def save_serie(self):
         if save_serie_dialog._exec():
