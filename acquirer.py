@@ -13,7 +13,8 @@ from path import Path
 from scipy import interpolate
 from PIL import Image
 
-interrupted = False
+#interrupted = False
+continue_scan = True
 
 logging.basicConfig(level = logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -189,41 +190,45 @@ def scan_3D(config,data):
 def scan_single(config, data):
     return scan(config, data, 'single')
 
-def scan(config,data,mode):
+def scan(config,data,mode,data_ready):
+    logger.info("Start scan mode %s"%mode)
     adjust_scope_config_to_scan(mode,config)
     memory = allocate_memory(mode,config)
     scope = configure_scope(mode,config['scope'])
     path = Path(config,mode)
 
-    global interrupted
-    interrupted = False
-    logger.info("Writing data in %s"%config['filename'])
-    with open(config['filename'],'w',0) as fd:
-        pickler = cPickle.Pickler(fd,cPickle.HIGHEST_PROTOCOL)
-        interrupt.signal(interrupt.SIGINT, signal_handler)
-        while path.has_next() and not interrupted:
-            tomogram = memory.next()
-            signal = convert_path_to_voltage(path.next(),config['path_to_voltage'])
-            daq = configure_daq(mode,config['daq'])
-            #need to test if array ordering is ok
-            daq.write(signal)
-            try:
-                scope.InitiateAcquisition()
-                logger.debug("Std devition before fetch %.2e"%np.std(tomogram))
-                scope.fetch_sample_signal(tomogram)
-                logger.debug("Std devition after fetch %.2e"%np.std(tomogram))
-                pickler.dump(tomogram)
-            except Exception, msg:
-                logger.exception(msg)
-                del daq
-                signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
-                break
+    global continue_scan 
+#    interrupted = False
+#    logger.info("Writing data in %s"%config['filename'])
+#    with open(config['filename'],'w',0) as fd:
+#        pickler = cPickle.Pickler(fd,cPickle.HIGHEST_PROTOCOL)
+#        interrupt.signal(interrupt.SIGINT, signal_handler)
+    while path.has_next() and continue_scan:
+        tomogram = memory.next()
+        signal = convert_path_to_voltage(path.next(),config['path_to_voltage'])
+        daq = configure_daq(mode,config['daq'])
+        #need to test if array ordering is ok
+        daq.write(signal)
+        try:
+            scope.InitiateAcquisition()
+            logger.debug("Std devition before fetch %.2e"%np.std(tomogram))
+            scope.fetch_sample_signal(tomogram)
+            logger.debug("Std devition after fetch %.2e"%np.std(tomogram))
+            data_ready(tomogram)
+#                pickler.dump(tomogram)
+        except Exception, msg:
+            logger.exception(msg)
             del daq
             signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
-            move_daq(signal,config['daq'])
-        fd.close()
-        move_daq([0,0],config['daq'])
-        return tomogram
+            break
+        del daq
+        signal = convert_path_to_voltage(path.next_return(),config['path_to_voltage'])
+        move_daq(signal,config['daq'])
+        logger.debug('Path has next? %s'%path.has_next())
+#        fd.close()
+    move_daq([0,0],config['daq'])
+    logger.debug("Exiting scan")
+    return tomogram
 
 
 def resample_d(config,data):
