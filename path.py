@@ -112,7 +112,7 @@ class Path:
         self.next = {
             '3D':self.next_3D,
             'single':self.next_single,
-            'continuous':self.next_single,
+            'continuous': lambda : self.scan_path,
                 }[mode]
 
         self.has_next = {
@@ -145,6 +145,9 @@ class Path:
 
     def next_single(self):
         self.has_next = lambda: False
+        return self.scan_path
+
+    def next_continuous(self):
         return self.scan_path
 
     def next_3D(self):
