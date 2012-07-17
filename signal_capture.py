@@ -5,7 +5,7 @@ import signal as interrupt
 import matplotlib.pyplot as plt
 
 ####### CONFIGURATION ##########
-dev = 'Dev2'
+dev = 'Dev1'
 VerticalRef = {
     'coupling': COUPLING.AC,
     'channelList': 'ext',
