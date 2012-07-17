@@ -122,20 +122,6 @@
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="2">
-                 <widget class="QPushButton" name="imagej">
-                  <property name="text">
-                   <string>ImageJ</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="3">
-                 <widget class="QPushButton" name="switch_2">
-                  <property name="text">
-                   <string>Switch</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="1" column="0">
                  <widget class="QSpinBox" name="select_image">
                   <property name="minimum">
@@ -161,42 +147,6 @@
                   <property name="text">
                    <string>Scale</string>
                   </property>
-                 </widget>
-                </item>
-                <item row="1" column="3" rowspan="2">
-                 <widget class="QGroupBox" name="selection_box">
-                  <property name="title">
-                   <string>Type</string>
-                  </property>
-                  <property name="checkable">
-                   <bool>false</bool>
-                  </property>
-                  <widget class="QRadioButton" name="d2">
-                   <property name="geometry">
-                    <rect>
-                     <x>50</x>
-                     <y>0</y>
-                     <width>61</width>
-                     <height>22</height>
-                    </rect>
-                   </property>
-                   <property name="text">
-                    <string>2D</string>
-                   </property>
-                  </widget>
-                  <widget class="QRadioButton" name="d3">
-                   <property name="geometry">
-                    <rect>
-                     <x>50</x>
-                     <y>30</y>
-                     <width>61</width>
-                     <height>22</height>
-                    </rect>
-                   </property>
-                   <property name="text">
-                    <string>3D</string>
-                   </property>
-                  </widget>
                  </widget>
                 </item>
                 <item row="3" column="0">
@@ -240,6 +190,75 @@
                  <widget class="QPushButton" name="stop_button">
                   <property name="text">
                    <string>Stop</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QPushButton" name="imagej">
+                  <property name="text">
+                   <string>ImageJ</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2">
+                 <widget class="QPushButton" name="switch_2">
+                  <property name="text">
+                   <string>Switch</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="3" rowspan="2">
+                 <widget class="QGroupBox" name="selection_box">
+                  <property name="title">
+                   <string>Type</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>false</bool>
+                  </property>
+                  <widget class="QRadioButton" name="d2">
+                   <property name="geometry">
+                    <rect>
+                     <x>50</x>
+                     <y>0</y>
+                     <width>61</width>
+                     <height>22</height>
+                    </rect>
+                   </property>
+                   <property name="text">
+                    <string>2D</string>
+                   </property>
+                  </widget>
+                  <widget class="QRadioButton" name="d3">
+                   <property name="geometry">
+                    <rect>
+                     <x>50</x>
+                     <y>30</y>
+                     <width>61</width>
+                     <height>22</height>
+                    </rect>
+                   </property>
+                   <property name="text">
+                    <string>3D</string>
+                   </property>
+                  </widget>
+                 </widget>
+                </item>
+                <item row="2" column="3">
+                 <widget class="QDoubleSpinBox" name="exposure_spinbox">
+                  <property name="accelerated">
+                   <bool>true</bool>
+                  </property>
+                  <property name="minimum">
+                   <double>0.100000000000000</double>
+                  </property>
+                  <property name="maximum">
+                   <double>60.000000000000000</double>
+                  </property>
+                  <property name="singleStep">
+                   <double>0.100000000000000</double>
+                  </property>
+                  <property name="value">
+                   <double>10.000000000000000</double>
                   </property>
                  </widget>
                 </item>

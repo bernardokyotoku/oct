@@ -9,7 +9,7 @@ from PyQt4.QtCore import QLine, QString, QObject, SIGNAL, QLineF, QRectF, QRect,
 form_class, base_class = uic.loadUiType("front_window2.ui")
 from numpy import *
 from PyQt4 import Qt
-import PyQt4.Qwt5 as Qwt
+#import PyQt4.Qwt5 as Qwt
 #from pyqtgraph.graphicsItems import ImageItem
 import matplotlib, matplotlib.pyplot as plt, matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -117,6 +117,7 @@ class OCT (QtGui.QMainWindow, form_class):
         ('start_camera_button', "clicked()",            'camera_button'),
         ('black_spinbox',       "valueChanged(double)", 'update_saturation'),
         ('stop_button',         "clicked()",            'setup_plot'),
+        ('exposure_spinbox',    "valueChanged(double)", 'set_exposure'),
         ]
         def connect(blob): 
             QObject.connect(
@@ -136,6 +137,9 @@ class OCT (QtGui.QMainWindow, form_class):
             self.stop_camera()
             self.start_camera_button.setText("Start Camera")
 
+    def set_exposure(self, time):
+        self.camera_device.Exposure(time)
+
     def stop_acquisition(self):
         self.emit(QtCore.SIGNAL("stop_acquistion()"))
         QObject.disconnect(self.start,SIGNAL("clicked()"),self.stop_acquisition),
@@ -148,6 +152,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.camera_device.SetImageMem()
         self.camera_device.SetImageSize()
         self.camera_device.SetColorMode()
+        self.set_exposure(self.exposure_spinbox.value())
         self.camera_device.CaptureVideo()
         self.camera_timer = QtCore.QTimer()
         self.connect(self.camera_timer, 
@@ -220,16 +225,20 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def plot_button_released(self, event):
         if event.inaxes is self.tomography_ax:
-            logger.debug("tomography axis clicked")
+            logger.debug("tomography axis clicked %f,%f"%(event.xdata, event.ydata))
+            self.a_scan_plot_line(int(event.xdata))
         elif event.inaxes is self.a_scan_ax:
             logger.debug("a_scan axis clicked")
         else:
             logger.debug("Button released X:%f, Y%f, axis %s"%(event.xdata, event.ydata, str(event.inaxes)))
 
+
     def setup_tomography(self):
         self.zlim = [None, None]
         self.tomography_ax = plt.subplot(self.gridspec[0])
         self.tomography_ax.plot()
+        self.tomography_ax.set_xticks([0,1,2,3])
+        self.tomography_ax.set_xticklabels([2,3,5,6])
        #self.fig.add_subplot(121)
 
 #        self.tomography_scene = QGraphicsScene(0,0,640,480)
@@ -252,6 +261,16 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def remove_scale(self):
         self.tomography_scene.removeItem(self.scale_item)
+
+    def a_scan_plot_line(self, line_index):
+        self.a_scan_ax.clear()
+        if self.tomography_ax.has_data():
+            y = self.processed_data[self.current_image][:,line_index]
+            x = np.arange(*(0,)+y.shape)
+            self.a_scan_ax.plot(y, x)
+            self.canvas.draw()
+
+
 
     def tomography_pressed(self, event):
         x = int(event.scenePos().x())
@@ -324,7 +343,7 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def update_camera_image_timer(self):
         self.update_camera_image()
-        self.camera_timer.start(500)
+        self.camera_timer.start(100)
 
     def change_selector(self):
         if self.d2.isChecked():
