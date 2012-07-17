@@ -45,6 +45,18 @@ def matrix(phase):
     lengths = 500*np.sin(phase + 4*np.linspace(0,2,arg.height)) + 1000
     return np.vstack([spectrum(L) for L in lengths])
 
+continue_scan = True
+
+def scan(config,data,mode,data_ready):
+    global continue_scan
+    continue_scan = True
+    while continue_scan:
+        moving_factor = 0.1
+        m = matrix(i*moving_factor)
+        data_ready(m)
+        if mode == "single":
+            continue_scan = False
+
 def main():
     if arg.a:
         fd = open(arg.out_file,'w',0)
