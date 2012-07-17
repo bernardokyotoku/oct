@@ -20,7 +20,10 @@ try:
 except ImportError:
     sys.stderr.write("Cannot import ueye modules")
 from CameraGraphicsView import CameraGraphicsView
-import acquirer
+try:
+    import acquirer
+except ImportError:
+    import image_generator as acquirer
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -237,8 +240,6 @@ class OCT (QtGui.QMainWindow, form_class):
         self.zlim = [None, None]
         self.tomography_ax = plt.subplot(self.gridspec[0])
         self.tomography_ax.plot()
-        self.tomography_ax.set_xticks([0,1,2,3])
-        self.tomography_ax.set_xticklabels([2,3,5,6])
        #self.fig.add_subplot(121)
 
 #        self.tomography_scene = QGraphicsScene(0,0,640,480)
@@ -268,9 +269,8 @@ class OCT (QtGui.QMainWindow, form_class):
             y = self.processed_data[self.current_image][:,line_index]
             x = np.arange(*(0,)+y.shape)
             self.a_scan_ax.plot(y, x)
+            self.set_yticks(self.a_scan_ax)
             self.canvas.draw()
-
-
 
     def tomography_pressed(self, event):
         x = int(event.scenePos().x())
@@ -414,7 +414,38 @@ class OCT (QtGui.QMainWindow, form_class):
         logger.debug("zlim in plot_in_tomography_view %s"%str(self.zlim))
         self.tomography_ax.clear()        
         self.tomography_ax.imshow(self.current_tomography_data,vmin=self.zlim[0],vmax=self.zlim[1])
+        self.set_xticks(self.tomography_ax)
+        self.set_yticks(self.tomography_ax)
+        self.adjust_aspect_ratio()
         self.canvas.draw()
+
+    def adjust_aspect_ratio(self):
+        shape = self.current_tomography_data.shape
+        length = self.current_tomography_length()
+        depth = self.config["z_resolution"]*shape[1]
+        self.tomography_ax.set_aspect(depth/length)
+
+    def current_tomography_length(self):
+        sr = self.config['scan_region']
+        length = np.sqrt((sr['xf'] - sr['x0'])**2 + (sr['yf'] - sr['y0'])**2)
+        return length
+
+    def set_xticks(self, axes):
+        shape = self.current_tomography_data.shape
+        length = self.current_tomography_length()
+        delta = float(str(length/25)[0])*5
+        x_tick_labels = np.arange(0, length, delta)
+        x_ticks_pos = x_tick_labels/length*shape[0]
+        axes.set_xticks(x_ticks_pos)
+        axes.set_xticklabels(x_ticks_labels)
+
+    def set_yticks(self, axes):
+        depth = self.config["z_resolution"]*shape[1]
+        delta = float(str(depth/25)[0])*5
+        y_tick_labels = np.arange(0, depth, delta)
+        y_ticks_pos = y_tick_labels/depth*shape[0]
+        axes.set_yticks(y_ticks_pos)
+        axes.set_yticklabels(y_ticks_labels)
 
 #        if hasattr(self, "tomography_item"):
 #            self.tomography_scene.removeItem(self.tomography_item)
