@@ -1,4 +1,7 @@
 import logging
+logging.basicConfig(level = logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import matplotlib.pyplot as plt
 import signal as interrupt
@@ -13,11 +16,25 @@ from path import Path
 from scipy import interpolate
 from PIL import Image
 
+try:
+    import niScope
+except ImportError
+    logger.warning("niScope missing, using simulator")
+    import image_generator as niScope
+
+try:
+    import nidaqmx
+    AnalogOutputTask = nidaqmx.AnalogOutputTask
+    if nidaqmx.libdaqmx.lib == None:
+        raise ImportError
+except ImportError:
+    logger.warning("nidaqmx missing, using stub")
+    from daq_stub import AnalogOutputTask
+
+
 #interrupted = False
 continue_scan = True
 
-logging.basicConfig(level = logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 def signal_handler(signal, frame):
     print "interrupt"
@@ -35,10 +52,6 @@ def park(daq):
     position([0,0],daq)
 
 def move_daq(signal,daq_config):
-    try:
-        from nidaqmx import AnalogOutputTask
-    except Exception:
-        print "nidaqmx missing, continuing anyway"
     daq = AnalogOutputTask()
     daq.create_voltage_channel(**daq_config['X'])
     daq.create_voltage_channel(**daq_config['Y'])
@@ -108,10 +121,6 @@ def convert_path_to_voltage(path,path_to_voltage_constants):
     return path*T
 
 def configure_daq(mode,daq_config):
-    try:
-        from nidaqmx import AnalogOutputTask
-    except Exception:
-        print "nidaqmx missing, continuing anyway"
     daq = AnalogOutputTask()
     daq.create_voltage_channel(**daq_config['X'])
     daq.create_voltage_channel(**daq_config['Y'])
@@ -125,10 +134,6 @@ def adjust_scope_config_to_scan(mode,config):
     config['scope']['Horizontal']['numPts'] = numPts
 
 def configure_scope(mode,config):
-    try:
-        import niScope
-    except Exception:
-        print "niScope missing, continuing anyway"
     def fetch(self,memory):
         ch = config['VerticalSample']['channelList']
         logger.info("Fetching channel: %s"%ch)
