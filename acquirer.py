@@ -18,14 +18,14 @@ from PIL import Image
 
 try:
     import niScope
-except ImportError
+except ImportError:
     logger.warning("niScope missing, using simulator")
     import image_generator as niScope
 
 try:
     import nidaqmx
     AnalogOutputTask = nidaqmx.AnalogOutputTask
-    if nidaqmx.libdaqmx.lib == None:
+    if nidaqmx.libnidaqmx.lib == None:
         raise ImportError
 except ImportError:
     logger.warning("nidaqmx missing, using stub")
@@ -217,6 +217,7 @@ def scan(config,data,mode,data_ready):
         try:
             scope.InitiateAcquisition()
             logger.debug("Std devition before fetch %.2e"%np.std(tomogram))
+            logger.debug("tomogram memory position %d"%id(tomogram))
             scope.fetch_sample_signal(tomogram)
             logger.debug("Std devition after fetch %.2e"%np.std(tomogram))
             data_ready(tomogram)

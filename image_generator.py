@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 import numpy as np
 import matplotlib.pyplot as plt
 import cPickle
@@ -23,6 +26,10 @@ def parse():
     return parser.parse_args()
 arg = parse()
 
+width = arg.width
+height = arg.height
+f = arg.f
+
 def matrix(phase):
     def gauss(x,x0,d):
         return np.exp(-((x-x0)/d)**2)
@@ -33,19 +40,30 @@ def matrix(phase):
         Dlmbd = 0.02
         
         c = 3E8 # micrometers/microseconds
-        if arg.f:
+        if f:
             spectral_range = c/spectral_range 
-        x = np.linspace(spectral_range[0],spectral_range[1],arg.width)
-        if arg.f:
+        x = np.linspace(spectral_range[0],spectral_range[1],width)
+        if f:
             spectral_range = c/spectral_range 
             x = c/x
         lmbd = x
         spect = np.cos(2*np.pi*L/lmbd)*gauss(lmbd,lmbd0,Dlmbd)
         return spect
-    lengths = 500*np.sin(phase + 4*np.linspace(0,2,arg.height)) + 1000
+    lengths = 500*np.sin(phase + 4*np.linspace(0,2,height)) + 1000
     return np.vstack([spectrum(L) for L in lengths])
 
 continue_scan = True
+
+i = 0
+def fill_with_simulation(memory):
+    global i, width, height
+    width, height = memory.shape
+    moving_factor = 0.1
+    m = matrix(i*moving_factor)
+    i += 1
+    logger.debug("Filling with data whose std is %e.2"%np.std(m))
+    np.copyto(memory, m.T)
+
 
 def scan(config,data,mode,data_ready):
     global continue_scan
@@ -59,6 +77,37 @@ def scan(config,data,mode,data_ready):
         if mode == "single":
             continue_scan = False
         sleep(1.0/float(arg.rate))
+
+class Scope:
+    def __init__(self, device):
+        self.i = 0
+        logger.debug("Scope initatied device %s"%device)
+
+    def ConfigureHorizontalTiming(self, **config):
+        logger.debug("configuring horizontal timming")
+
+    def ExportSignal(self, **config):
+        logger.debug("configuring export signal")
+
+    def ConfigureTrigger(self, **config):
+        logger.debug("configuring trigger")
+
+    def ConfigureVertical(self, **config):
+        logger.debug("configuring vertical")
+
+    def InitiateAcquisition(self):
+        logger.debug("initiating acquisition")
+
+    def Fetch(self, ch, memory):
+        logger.debug("Fetching data to memory position %d"%id(memory))
+        global width, height, f
+        f = True
+        width, height = memory.shape
+        moving_factor = 0.1
+        m = matrix(self.i*moving_factor)
+        self.i += 1
+        logger.debug("Filling with data whose std is %e.2"%np.std(m))
+        memory[:] = 10000*m.T
 
 def main():
     if arg.a:
