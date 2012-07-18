@@ -22,8 +22,8 @@ from scipy import interpolate
 
 logging.basicConfig()
 
-_log = logging.getLogger(__name__)
-_log.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def log_type(value):
     try:
@@ -60,8 +60,8 @@ def resample(raw_data,config,rsp_data=None,axis=0):
     return rsp_data
 
 def process(data,parameters,config):
-    depth, width = data.shape
     data = resample(data, config)
+    depth, width = data.shape
     data = transform(data.T).T
     data = data[:depth/2, :]
     data = 10*np.log(data)

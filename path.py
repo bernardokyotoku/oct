@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 import numpy as np
 from path import *
 
@@ -106,6 +109,7 @@ def smooth_return(p0,pf,acc):
 
 class Path:
     def __init__(self,config,mode="single"):
+        logger.debug("initiating path mode %s"%mode)
         for key,value in config[mode].iteritems():
             setattr(self,key,value)
         self.i = 0 
@@ -115,7 +119,7 @@ class Path:
             'continuous': lambda : self.scan_path,
                 }[mode]
 
-        self.has_next = {
+        self.has_next_log = {
             '3D':self.has_next_3D,
             'single' : lambda : True ,
             'continuous' : lambda : True,
@@ -139,8 +143,12 @@ class Path:
             'continuous':self.make_single_smooth_return,
                 }[mode]()
 
+    def has_next(self):
+        logger.debug('Path has next? %s'%self.has_next_log())
+        return self.has_next_log()
 
     def has_next_3D(self):
+        logger.debug("Getting path %d"%self.i)
         return self.i<self.numTomograms
 
     def next_single(self):

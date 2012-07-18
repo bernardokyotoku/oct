@@ -73,6 +73,7 @@ class AcquirerProcessor(QtCore.QThread):
 
 class AcquirerProcessor2(QtCore.QThread):
     def __init__(self, parent = None):
+        self.parent = parent
         self.config = parent.config
         QtCore.QThread.__init__(self, parent)
         self.connect(parent, 
@@ -80,19 +81,20 @@ class AcquirerProcessor2(QtCore.QThread):
                      self.stop_acquisition)
 
     def run(self):
+        scan_type = self.parent.scan_type
         acquirer.continue_scan = True
         self.data = []
-        acquirer.scan(self.config, self.data, "continuous", self.data_ready)
+        acquirer.scan(self.config, self.data, scan_type, self.data_ready)
+        self.emit(QtCore.SIGNAL("acquisition_finished"))
 
     def data_ready(self, data):   
-        self.data = data
-        logger.debug("std dev %.2e"%np.std(self.data))
+        logger.debug("std dev %.2e"%np.std(data))
         parameters = {"brightness":-00, "contrast":2}
-        self.data = processor.process(self.data, parameters, self.config)
+        data = processor.process(data, parameters, self.config)
         logger.debug("Emitting data ready to showing")
-        logger.debug("std dev processed %.2e"%np.std(self.data))
-        logger.debug("data dim %s"%str(self.data.shape))
-        self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), self.data)
+        logger.debug("std dev processed %.2e"%np.std(data))
+        logger.debug("data dim %s"%str(data.shape))
+        self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), data)
 
     def stop_acquisition(self):
         acquirer.continue_scan = False
@@ -103,15 +105,16 @@ class OCT (QtGui.QMainWindow, form_class):
         self.setupUi(self)
         self.config = processor.parse_config()
         self.setup_plot()
-#        self.setup_tomography()
-#        self.setup_a_scan()
         self.setup_camera()
-        self.setup_select_image()
         self.processed_data = []
         self.current_image = 0
-        self.setup_show_scale()
         self.setup_data_collector()
         self.setup_signals()
+        self.apply_config()
+
+    def apply_config(self):
+        self.update_n_lines_spinbox()
+        self.update_n_images_spinbox()
 
     def setup_signals(self):
         signals = [
@@ -122,6 +125,9 @@ class OCT (QtGui.QMainWindow, form_class):
         ('black_spinbox',       "valueChanged(double)", 'update_saturation'),
         ('stop_button',         "clicked()",            'setup_plot'),
         ('exposure_spinbox',    "valueChanged(double)", 'set_exposure'),
+        ('select_image',        "value_changed(int)",   'update_image'),
+        ('n_lines_spinbox',     "value_changed(int)",   'update_n_lines'),
+        ('n_images_spinbox',    "value_changed(int)",   'update_n_images'),
         ]
         def connect(blob): 
             QObject.connect(
@@ -130,6 +136,19 @@ class OCT (QtGui.QMainWindow, form_class):
                     getattr(self, blob[2])
                     )
         map(connect, signals)
+
+    def update_n_lines_spinbox(self):
+        self.n_lines_spinbox.setValue(self.config[self.scan_type]['numRecords'])
+
+    def update_n_images_spinbox(self):
+        self.n_images_spinbox.setValue(self.config[self.scan_type]['numTomograms'])
+
+    def update_n_lines(self, n):
+        self.config[self.scan_type]['numRecords'] = n
+
+    def update_n_images(self, n):
+        self.config[self.scan_type]['numTomograms'] = n
+
 
     def camera_button(self):
         if self.start_camera_button.text() == "Start Camera":
@@ -146,6 +165,9 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def stop_acquisition(self):
         self.emit(QtCore.SIGNAL("stop_acquistion()"))
+        self.reset_acquisition_button()
+
+    def reset_acquisition_button(self):
         QObject.disconnect(self.start,SIGNAL("clicked()"),self.stop_acquisition),
         QObject.connect(self.start,SIGNAL("clicked()"),self.start_acquisition),
         self.start.setText("Start Acquisition")
@@ -206,8 +228,6 @@ class OCT (QtGui.QMainWindow, form_class):
             image.save(fp = fp, format = "tiff")
         return filename
 
-    def setup_select_image(self):
-        QObject.connect(self.select_image, SIGNAL("valueChanged( int )"), self.update_image)
 
     def setup_plot(self):
         logger.debug("Setting plot up")
@@ -351,10 +371,15 @@ class OCT (QtGui.QMainWindow, form_class):
         if self.d2.isChecked():
             self.scan_type = "continuous"
             self.selector = lambda start, end: self.camera_scene.addLine(QLineF(start, end))
+            self.n_images_spinbox.setEnabled(False)
         else:
             self.scan_type = "3D"
             self.selector = self.select_rect
 #            self.selector = lambda start, end: self.camera_scene.addRect(QRectF(start, end))
+            self.n_images_spinbox.setEnabled(True)
+        logger.debug("selecting scan type %s"%self.scan_type)
+        self.update_n_lines_spinbox()
+        self.update_n_images_spinbox()
 
     def area_select(self, start, end):
         return self.camera_scene.addRect(QRectF(start, end))
@@ -364,16 +389,22 @@ class OCT (QtGui.QMainWindow, form_class):
         self.camera_moved(event)
 
     def update_config_path(self, start, end):
+        logger.debug("selecting camera scene coord %s,%s"%(str(start), str(end)))
         start = self.convert_to_path(start)
         end = self.convert_to_path(end)
         self.config[self.scan_type]['x0'] = start.x() 
         self.config[self.scan_type]['y0'] = start.y() 
-        self.config[self.scan_type]['xf'] = start.x() 
-        self.config[self.scan_type]['yf'] = start.y() 
+        self.config[self.scan_type]['xf'] = end.x() 
+        self.config[self.scan_type]['yf'] = end.y() 
 
     def convert_to_path(self, point):
         scale = self.config['camera_to_path_scale']
-        return point*scale
+        x_offset = self.config['camera_to_path_x_offset']
+        y_offset = self.config['camera_to_path_y_offset']
+        offset = QPointF(x_offset, y_offset)
+        transformed = (point - offset)*scale
+        logger.debug("point %s"%str(transformed))
+        return transformed
 
     def fix_rect_points(self, A, B):
         x0 = min([A.x(), B.x()])
@@ -429,6 +460,7 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def current_tomography_length(self):
         sr = self.config[self.scan_type]
+        logger.debug("current points %s"%str(sr))
         length = np.sqrt((sr['xf'] - sr['x0'])**2 + (sr['yf'] - sr['y0'])**2)
         return length
 
