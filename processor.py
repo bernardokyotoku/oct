@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from configobj import ConfigObj
 from validate import Validator
-from acquirer import log_type,resample
+#from acquirer import log_type,resample
 import argparse
 import sys
 import cPickle
@@ -24,6 +24,13 @@ logging.basicConfig()
 
 _log = logging.getLogger(__name__)
 _log.setLevel(logging.DEBUG)
+
+def log_type(value):
+    try:
+        return getattr(logging,value)
+    except AttributeError:
+        pass
+    return int(value)    
 
 def renormalize(data,parameters):
     data = data + parameters['brightness']
@@ -55,6 +62,13 @@ def resample(raw_data,config,rsp_data=None,axis=0):
 def process(data,parameters,config):
     data = resample(data, config)
     data = transform(data.T).T
+    data = 10*np.log(data)
+#    data = renormalize(data,parameters)
+#    data = np.ascontiguousarray(np.uint8(data))
+    return data
+
+def process2(data,parameters,config):
+    data = transform(data).T
     data = 10*np.log(data)
 #    data = renormalize(data,parameters)
 #    data = np.ascontiguousarray(np.uint8(data))
