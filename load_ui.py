@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys, subprocess, cPickle, numpy as np, Image, tempfile, os, logging
-import processor
 from configobj import ConfigObj
 from PyQt4 import QtCore, QtGui, uic
 #from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap, QSizePolicy, QPainter, QFont, QFrame, QPallete
@@ -24,6 +23,7 @@ try:
     import acquirer
 except ImportError:
     import image_generator as acquirer
+import processor
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -88,7 +88,10 @@ class AcquirerProcessor2(QtCore.QThread):
         self.data = data
         logger.debug("std dev %.2e"%np.std(self.data))
         parameters = {"brightness":-00, "contrast":2}
-        self.data = processor.process(self.data, parameters, self.config)
+        if acquirer.__name__ == "image_generator":
+            self.data = processor.process2(self.data, parameters, self.config)
+        else:
+            self.data = processor.process(self.data, parameters, self.config)
         logger.debug("Emitting data ready to showing")
         logger.debug("std dev processed %.2e"%np.std(self.data))
         self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), self.data)
@@ -207,6 +210,7 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def setup_select_image(self):
         QObject.connect(self.select_image, SIGNAL("valueChanged( int )"), self.update_image)
+
     def setup_plot(self):
         logger.debug("Setting plot up")
         self.dpi = 80
@@ -421,31 +425,39 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def adjust_aspect_ratio(self):
         shape = self.current_tomography_data.shape
-        length = self.current_tomography_length()
-        depth = self.config["z_resolution"]*shape[1]
+        length = self.current_tomography_length()*1000
+        depth = self.config["z_resolution"]*shape[0]
         self.tomography_ax.set_aspect(depth/length)
 
     def current_tomography_length(self):
-        sr = self.config['scan_region']
+        sr = self.config[self.scan_type]
         length = np.sqrt((sr['xf'] - sr['x0'])**2 + (sr['yf'] - sr['y0'])**2)
         return length
 
     def set_xticks(self, axes):
         shape = self.current_tomography_data.shape
-        length = self.current_tomography_length()
-        delta = float(str(length/25)[0])*5
-        x_tick_labels = np.arange(0, length, delta)
-        x_ticks_pos = x_tick_labels/length*shape[0]
+        length = self.current_tomography_length()*1000
+        a = float(length)/25
+        b = int(np.log10(a))
+        r = int(a/10**b)*10**b
+        delta = int(float(r)*5)
+        x_tick_labels = np.arange(0, int(length), delta)
+        x_ticks_pos = x_tick_labels/length*shape[1]
+
         axes.set_xticks(x_ticks_pos)
-        axes.set_xticklabels(x_ticks_labels)
+        axes.set_xticklabels(x_tick_labels)
 
     def set_yticks(self, axes):
-        depth = self.config["z_resolution"]*shape[1]
-        delta = float(str(depth/25)[0])*5
-        y_tick_labels = np.arange(0, depth, delta)
+        shape = self.current_tomography_data.shape
+        depth = self.config["z_resolution"]*shape[0]
+        a = float(depth)/25
+        b = int(np.log10(a))
+        r = int(a/10**b)*10**b
+        delta = int(float(r)*5)
+        y_tick_labels = np.arange(0, int(depth), delta)
         y_ticks_pos = y_tick_labels/depth*shape[0]
         axes.set_yticks(y_ticks_pos)
-        axes.set_yticklabels(y_ticks_labels)
+        axes.set_yticklabels(y_tick_labels)
 
 #        if hasattr(self, "tomography_item"):
 #            self.tomography_scene.removeItem(self.tomography_item)
