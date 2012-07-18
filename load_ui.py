@@ -484,8 +484,8 @@ class OCT (QtGui.QMainWindow, form_class):
         self.current_image = n_images - 1
         self.select_image.setMaximum(n_images)
         self.plot_in_tomography_view(data)
-        self.saturation_spinbox.setValue(np.max(data))
-        self.black_spinbox.setValue(np.min(data))
+        self.saturation_spinbox.setValue(np.average(data)+30)
+        self.black_spinbox.setValue(np.average(data))
 
     def start_acquisition(self):
         self.DataCollector.start()
