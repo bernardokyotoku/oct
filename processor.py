@@ -42,7 +42,7 @@ def transform(rsp_data):
 
 def resample(raw_data,config,rsp_data=None,axis=0):
     if rsp_data == None:
-        n = 320
+        n = config['numLongPts']
         rsp_data = np.zeros((n,raw_data.shape[-1]))
     else:
         n = rsp_data.shape[axis]
@@ -68,7 +68,7 @@ def process(data,parameters,config):
     return data
 
 def process2(data,parameters,config):
-    data = transform(data).T
+    data = transform(data)
     data = 10*np.log(data)
 #    data = renormalize(data,parameters)
 #    data = np.ascontiguousarray(np.uint8(data))

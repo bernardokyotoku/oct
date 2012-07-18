@@ -218,8 +218,10 @@ def scan(config,data,mode,data_ready):
             scope.InitiateAcquisition()
             logger.debug("Std devition before fetch %.2e"%np.std(tomogram))
             logger.debug("tomogram memory position %d"%id(tomogram))
+            logger.debug("memory dim %s"%str(tomogram.shape))
             scope.fetch_sample_signal(tomogram)
             logger.debug("Std devition after fetch %.2e"%np.std(tomogram))
+            logger.debug("memory dim %s"%str(tomogram.shape))
             data_ready(tomogram)
 #                pickler.dump(tomogram)
         except Exception, msg:

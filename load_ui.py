@@ -88,12 +88,10 @@ class AcquirerProcessor2(QtCore.QThread):
         self.data = data
         logger.debug("std dev %.2e"%np.std(self.data))
         parameters = {"brightness":-00, "contrast":2}
-        if acquirer.__name__ == "image_generator":
-            self.data = processor.process2(self.data, parameters, self.config)
-        else:
-            self.data = processor.process(self.data, parameters, self.config)
+        self.data = processor.process(self.data, parameters, self.config)
         logger.debug("Emitting data ready to showing")
         logger.debug("std dev processed %.2e"%np.std(self.data))
+        logger.debug("data dim %s"%str(self.data.shape))
         self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), self.data)
 
     def stop_acquisition(self):
