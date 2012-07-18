@@ -50,12 +50,15 @@ continue_scan = True
 def scan(config,data,mode,data_ready):
     global continue_scan
     continue_scan = True
+    i = 0
     while continue_scan:
         moving_factor = 0.1
         m = matrix(i*moving_factor)
+        i += 1
         data_ready(m)
         if mode == "single":
             continue_scan = False
+        sleep(1.0/float(arg.rate))
 
 def main():
     if arg.a:
