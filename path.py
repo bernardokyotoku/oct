@@ -110,6 +110,7 @@ def smooth_return(p0,pf,acc):
 class Path:
     def __init__(self,config,mode="single"):
         logger.debug("initiating path mode %s"%mode)
+        logger.debug("%s"%config[mode])
         for key,value in config[mode].iteritems():
             setattr(self,key,value)
         self.i = 0 

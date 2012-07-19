@@ -85,7 +85,7 @@ class AcquirerProcessor2(QtCore.QThread):
         acquirer.continue_scan = True
         self.data = []
         acquirer.scan(self.config, self.data, scan_type, self.data_ready)
-        self.emit(QtCore.SIGNAL("acquisition_finished"))
+        self.emit(QtCore.SIGNAL("acq_finished_event()"))
 
     def data_ready(self, data):   
         logger.debug("std dev %.2e"%np.std(data))
@@ -98,6 +98,25 @@ class AcquirerProcessor2(QtCore.QThread):
 
     def stop_acquisition(self):
         acquirer.continue_scan = False
+
+class Processor(QtCore.QThread):
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.config = parent.config
+        QtCore.QThread.__init__(self, parent)
+        self.connect(parent.acquirer, 
+                     QtCore.SIGNAL("data_acquired(PyQt_PyObject)"), 
+                     self.process)
+
+    def process(self, data):
+        logger.debug("std dev %.2e"%np.std(data))
+        parameters = {"brightness":-00, "contrast":2}
+        data = processor.process(data, parameters, self.config)
+        logger.debug("Emitting data ready to showing")
+        logger.debug("std dev processed %.2e"%np.std(data))
+        logger.debug("data dim %s"%str(data.shape))
+        self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), data)
+
 
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
@@ -125,9 +144,9 @@ class OCT (QtGui.QMainWindow, form_class):
         ('black_spinbox',       "valueChanged(double)", 'update_saturation'),
         ('stop_button',         "clicked()",            'setup_plot'),
         ('exposure_spinbox',    "valueChanged(double)", 'set_exposure'),
-        ('select_image',        "value_changed(int)",   'update_image'),
-        ('n_lines_spinbox',     "value_changed(int)",   'update_n_lines'),
-        ('n_images_spinbox',    "value_changed(int)",   'update_n_images'),
+        ('select_image',        "valueChanged(int)",   'update_image'),
+        ('n_lines_spinbox',     "valueChanged(int)",   'update_n_lines'),
+        ('n_images_spinbox',    "valueChanged(int)",   'update_n_images'),
         ]
         def connect(blob): 
             QObject.connect(
@@ -165,9 +184,8 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def stop_acquisition(self):
         self.emit(QtCore.SIGNAL("stop_acquistion()"))
-        self.reset_acquisition_button()
 
-    def reset_acquisition_button(self):
+    def acquisition_finished(self):
         QObject.disconnect(self.start,SIGNAL("clicked()"),self.stop_acquisition),
         QObject.connect(self.start,SIGNAL("clicked()"),self.start_acquisition),
         self.start.setText("Start Acquisition")
@@ -197,6 +215,7 @@ class OCT (QtGui.QMainWindow, form_class):
     def setup_data_collector(self):
         self.DataCollector = AcquirerProcessor2(self)
         self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
+        self.connect(self.DataCollector, SIGNAL("acq_finished_event()"), self.acquisition_finished)
 
     def setup_show_scale(self):
         QObject.connect(self.show_scale_checkbox, SIGNAL("stateChanged( int )"), self.show_scale_event)
@@ -255,7 +274,7 @@ class OCT (QtGui.QMainWindow, form_class):
         elif event.inaxes is self.a_scan_ax:
             logger.debug("a_scan axis clicked")
         else:
-            logger.debug("Button released X:%f, Y%f, axis %s"%(event.xdata, event.ydata, str(event.inaxes)))
+            logger.debug("Button released out of axes")
 
 
     def setup_tomography(self):
@@ -313,6 +332,7 @@ class OCT (QtGui.QMainWindow, form_class):
     def setup_a_scan(self):
         self.a_scan_ax = plt.subplot(self.gridspec[1])#self.fig.add_subplot(122)
         self.a_scan_ax.plot()
+        self.a_scan_ax.invert_yaxis()
 #        self.plot = Qwt.QwtPlot()
 #        size_policy = QSizePolicy()
 #        size_policy.setHorizontalStretch(1) 
@@ -515,7 +535,7 @@ class OCT (QtGui.QMainWindow, form_class):
         n_images = len(self.processed_data)
         self.current_image = n_images - 1
         self.select_image.setMaximum(n_images)
-        self.plot_in_tomography_view(data)
+        self.select_image.setValue(self.current_image)
         self.saturation_spinbox.setValue(np.average(data)+30)
         self.black_spinbox.setValue(np.average(data))
 
