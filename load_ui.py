@@ -122,6 +122,7 @@ class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
         QtGui.QWidget.__init__(self, parent, *args)
         self.setupUi(self)
+        self.setup_icon()
         self.config = processor.parse_config()
         self.setup_plot()
         self.setup_camera()
@@ -130,6 +131,10 @@ class OCT (QtGui.QMainWindow, form_class):
         self.setup_data_collector()
         self.setup_signals()
         self.apply_config()
+
+    def setup_icon(self):
+        icon = QIcon('icon.png')
+        self.setWindowIcon(icon)
 
     def apply_config(self):
         self.update_n_lines_spinbox()
