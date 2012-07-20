@@ -261,7 +261,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.width = 5.4
         height = 5.3
         self.fig = plt.figure(figsize = (self.width, height), dpi=self.dpi)
-        self.gridspec = gridspec.GridSpec(1, 2, left = 0.05, width_ratios=[3,1])
+        self.gridspec = gridspec.GridSpec(1, 2, left = 0.05, right=0.97, width_ratios=[4,1])
         self.canvas = FigureCanvas(self.fig)
         vbox = QVBoxLayout()
         vbox.addWidget(self.canvas)
