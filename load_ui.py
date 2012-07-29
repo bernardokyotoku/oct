@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-import sys, subprocess, cPickle, numpy as np, Image, tempfile, os, logging
+import sys, subprocess, cPickle, numpy as np, Image, tempfile, os, logging, datetime
 from configobj import ConfigObj
 from PyQt4 import QtCore, QtGui, uic
+from Queue import Queue
 #from PyQt4.QtGui import QAction, QMainWindow, QWidget, QApplication, qApp, QIcon, QTextEdit, QMenu, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene, qBlue, QPen, QRadioButton, QGroupBox, QButtonGroup, QPixmap, QSizePolicy, QPainter, QFont, QFrame, QPallete
 from PyQt4.QtGui import *
 from PyQt4.QtCore import QLine, QString, QObject, SIGNAL, QLineF, QRectF, QRect, QPoint, QPointF
 form_class, base_class = uic.loadUiType("front_window2.ui")
+from save_serie import SaveOptionDialog
 from numpy import *
 from PyQt4 import Qt
 #import PyQt4.Qwt5 as Qwt
@@ -84,8 +86,14 @@ class AcquirerProcessor2(QtCore.QThread):
         scan_type = self.parent.scan_type
         acquirer.continue_scan = True
         self.data = []
-        acquirer.scan(self.config, self.data, scan_type, self.data_ready)
+        acquirer.scan(self.config, self.data, scan_type, self.push)
         self.emit(QtCore.SIGNAL("acq_finished_event()"))
+
+    def push(self, data):
+        logger.debug("pushing data to queue")
+        self.parent.processor.queue.put(data)
+        size = self.parent.processor.queue.qsize()
+        self.emit(QtCore.SIGNAL("queue_size(int)"),size)
 
     def data_ready(self, data):   
         logger.debug("std dev %.2e"%np.std(data))
@@ -104,9 +112,15 @@ class Processor(QtCore.QThread):
         self.parent = parent
         self.config = parent.config
         QtCore.QThread.__init__(self, parent)
-        self.connect(parent.acquirer, 
-                     QtCore.SIGNAL("data_acquired(PyQt_PyObject)"), 
-                     self.process)
+        self.terminated = False
+        self.queue = Queue()
+
+    def run(self):
+        logger.debug("Processor running")
+        while not self.terminated:
+            logger.debug("Getting data from queue")
+            data = self.queue.get(block=True)
+            self.process(data)
 
     def process(self, data):
         logger.debug("std dev %.2e"%np.std(data))
@@ -124,7 +138,8 @@ class OCT (QtGui.QMainWindow, form_class):
         self.setupUi(self)
         self.setup_icon()
         self.config = processor.parse_config()
-        self.setup_plot()
+        self.setup_tomography()
+        self.setup_a_scan()
         self.setup_camera()
         self.processed_data = []
         self.current_image = 0
@@ -145,9 +160,9 @@ class OCT (QtGui.QMainWindow, form_class):
         ('start',               "clicked()",            'start_acquisition'),
         ('imagej',              "clicked()",            'image_j'),
         ('saturation_spinbox',  "valueChanged(double)", 'update_saturation'),
+        ('lock_adjust_checkbox',"stateChanged(int)",       'lock_adjust'),
         ('start_camera_button', "clicked()",            'camera_button'),
         ('black_spinbox',       "valueChanged(double)", 'update_saturation'),
-        ('stop_button',         "clicked()",            'setup_plot'),
         ('exposure_spinbox',    "valueChanged(double)", 'set_exposure'),
         ('select_image',        "valueChanged(int)",   'update_image'),
         ('n_lines_spinbox',     "valueChanged(int)",   'update_n_lines'),
@@ -160,6 +175,20 @@ class OCT (QtGui.QMainWindow, form_class):
                     getattr(self, blob[2])
                     )
         map(connect, signals)
+
+    def lock_adjust(self, state):
+        if state == Qt.Qt.Checked:
+            logger.debug("checking lock adjust")
+            self.black_spinbox.setEnabled(False)
+            self.saturation_spinbox.setEnabled(False)
+        elif state == Qt.Qt.Unchecked:
+            logger.debug("unchecking lock adjust")
+            self.black_spinbox.setEnabled(True)
+            self.saturation_spinbox.setEnabled(True)
+        
+
+    def report_queue_size(self, size):
+        self.statusBar().showMessage('Queue size %d'%size)
 
     def update_n_lines_spinbox(self):
         self.n_lines_spinbox.setValue(self.config[self.scan_type]['numRecords'])
@@ -195,6 +224,11 @@ class OCT (QtGui.QMainWindow, form_class):
         QObject.connect(self.start,SIGNAL("clicked()"),self.start_acquisition),
         self.start.setText("Start Acquisition")
 
+    def open_save_option_dialog(self):
+        save_option_dialog = SaveOptionDialog(self)
+        save_option_dialog.show()
+        
+
     def start_camera(self):
         self.camera_device = ueye.camera(1)
         self.camera_device.AllocImageMem()
@@ -218,9 +252,12 @@ class OCT (QtGui.QMainWindow, form_class):
         logger.debug("HELO")
 
     def setup_data_collector(self):
+        self.processor = Processor(self)
         self.DataCollector = AcquirerProcessor2(self)
-        self.connect(self.DataCollector, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
+        self.connect(self.processor, SIGNAL("data_ready(PyQt_PyObject)"), self.add_data_and_update)
         self.connect(self.DataCollector, SIGNAL("acq_finished_event()"), self.acquisition_finished)
+        self.connect(self.DataCollector, SIGNAL("queue_size(int)"), self.report_queue_size)
+        self.processor.start()
 
     def setup_show_scale(self):
         QObject.connect(self.show_scale_checkbox, SIGNAL("stateChanged( int )"), self.show_scale_event)
@@ -241,36 +278,63 @@ class OCT (QtGui.QMainWindow, form_class):
         self.camera_device.ExitCamera()
 
     def image_j(self):
-        filename = self.save_tiff(self.processed_data[self.current_image])
+        fd, filename = self.make_temp_filename()
+        self.save_tiff(self.processed_data[self.current_image], filename)
         subprocess.Popen(["imagej", '-o', filename], stdout = subprocess.PIPE)
 
-    def save_tiff(self, data):
-        data = data.T
-        image = Image.frombuffer("L" ,data.shape ,data.data, 'raw', 'L', 0 ,1)
-        fd, filename = tempfile.mkstemp(suffix = ".tiff")
-        with os.fdopen(fd, 'w') as fp:
-            image.save(fp = fp, format = "tiff")
+    def save_as(self):
+        defaults = self.config['defaults']
+        filename = str(self.filename_edit.text())
+        abs_filename = os.path.join(defaults['save_directory'], filename)
+        data = self.processed_data[self.current_image]
+        for key, value in defaults['save_formats'].iteritems():
+            if value:
+                save_function = getattr(self, 'save_' + key)
+                save_function(abs_filename, data)
+        logger.debug("saving %s"%abs_filename)
+        self.increment_filename()
+
+    def increment_filename(self):
+        filename = str(self.filename_edit.text())
+        suffix = filename.split('_')[-1]
+        prefix = filename.split('_')[:-1]
+        if suffix.isdigit():
+            suffix = '%02d'%(int(suffix) + 1)
+            filename = '_'.join(prefix + [suffix])
+        else:
+            filename = '_'.join(prefix + [suffix] + ['02'])
+        self.filename_edit.setText(filename)
+            
+
+    def make_temp_filename(self, suffix):
+        """return (fd, filename)"""
+        fd, filename = tempfile.mkstemp(suffix = suffix)
         return filename
 
+    def save_hdf5(self, filename, data):
+        import h5py
+        root = h5py.File(filename + '.h5', 'w')
+        tomography = root.create_dataset('tomography', data.shape, dtype = data.dtype)
+        tomography[:] = data
+        tomography.attrs['PixelXDimension'] = round(self.x_resolution(), 3)
+        tomography.attrs['PixelYDimension'] = round(self.config['z_resolution'], 3)
+        tomography.attrs['ResolutionUnit'] = 'um'
+        tomography.attrs['DateTime'] = datetime.datetime.now().ctime()
+        root.close()
 
-    def setup_plot(self):
-        logger.debug("Setting plot up")
-        self.dpi = 80
-#        width = float(self.tomography_holder_widget.width())/self.dpi
-#        height = float(self.tomography_holder_widget.height())/self.dpi
-        self.width = 5.4
-        height = 5.3
-        self.fig = plt.figure(figsize = (self.width, height), dpi=self.dpi)
-        self.gridspec = gridspec.GridSpec(1, 2, left = 0.05, right=0.97, width_ratios=[4,1])
-        self.canvas = FigureCanvas(self.fig)
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.canvas)
-        self.tomography_holder_widget.setLayout(vbox)
-        self.canvas.setParent(self.tomography_holder_widget)
-        self.canvas.mpl_connect('button_release_event', self.plot_button_released)
-        self.setup_tomography()
-        self.setup_a_scan()
-        self.canvas.draw()
+    def save_tiff(self, filename, data):
+        logger.debug('saving tiff %s'%filename)
+        data = data.astype(np.float32)
+        image = Image.fromstring("F" ,data.shape ,data.data, 'raw', 'F', 0 ,1)
+        with open(filename + '.tiff', 'w') as fp:
+            image.save(fp = fp, format = "tiff")
+
+    def save_app_plot(self, filename, data):
+        filename = filename + '.png'
+        self.fig_tomography.savefig(filename, bbox_inches='tight')
+
+    def save_serie(self, filename):
+        pass
 
     def plot_button_released(self, event):
         if event.inaxes is self.tomography_ax:
@@ -281,23 +345,6 @@ class OCT (QtGui.QMainWindow, form_class):
         else:
             logger.debug("Button released out of axes")
 
-
-    def setup_tomography(self):
-        self.zlim = [None, None]
-        self.tomography_ax = plt.subplot(self.gridspec[0])
-        self.tomography_ax.plot()
-       #self.fig.add_subplot(121)
-
-#        self.tomography_scene = QGraphicsScene(0,0,640,480)
-#        self.tomography_view.setScene(self.tomography_scene) 
-
-#        self.tomography_scene.mousePressEvent = self.tomography_pressed
-#        self.tomography_scene.mouseMoveEvent = self.tomography_pressed
-#        self.make_scale()
-#        self.plot_in_tomography_view(np.zeros((480,640)))
-#        self.tomography_view.fitInView(QRectF(0,0,640,480), QtCore.Qt.KeepAspectRatio)
-#        self.tomography_scene.mouseReleaseEvent = self.camera_released
-    
 
     def make_scale(self):
         scene_rect = self.tomography_scene.sceneRect()
@@ -316,7 +363,7 @@ class OCT (QtGui.QMainWindow, form_class):
             x = np.arange(*(0,)+y.shape)
             self.a_scan_ax.plot(y, x)
             self.set_yticks(self.a_scan_ax)
-            self.canvas.draw()
+            self.canvas_a_scan.draw()
 
     def tomography_pressed(self, event):
         x = int(event.scenePos().x())
@@ -334,36 +381,50 @@ class OCT (QtGui.QMainWindow, form_class):
         self.curve.setData(Y,X)
         self.plot.replot()
 
+    def setup_tomography(self):
+        logger.debug("Setting tomography up")
+        self.dpi = 80
+        self.width = 3.4
+        height = 5.3
+        self.fig_tomography = plt.figure(dpi=self.dpi)
+        self.canvas_tomography = FigureCanvas(self.fig_tomography)
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.canvas_tomography)
+        self.tomography_widget.setLayout(vbox)
+        self.canvas_tomography.setParent(self.tomography_widget)
+        self.canvas_tomography.mpl_connect('button_release_event', self.plot_button_released)
+        self.zlim = [None, None]
+        self.tomography_ax = plt.Axes(self.fig_tomography, [0.04, 0.05, 0.95, 0.92])
+        self.fig_tomography.add_axes(self.tomography_ax)
+        self.tomography_ax.plot()
+        self.canvas_tomography.draw()
+
     def setup_a_scan(self):
-        self.a_scan_ax = plt.subplot(self.gridspec[1])#self.fig.add_subplot(122)
+        logger.debug("Setting a_scan up")
+        self.dpi = 80
+        self.fig_a_scan = plt.figure(dpi=self.dpi)
+        self.canvas_a_scan = FigureCanvas(self.fig_a_scan)
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.canvas_a_scan)
+        self.a_scan_widget.setLayout(vbox)
+        self.canvas_a_scan.setParent(self.a_scan_widget)
+        self.a_scan_ax = plt.Axes(self.fig_a_scan, [0.1, 0.05, 0.85, 0.92])#, sharey = self.tomography_ax)
+        self.fig_a_scan.add_axes(self.a_scan_ax)
+#        self.a_scan_ax = self.fig_a_scan.add_subplot(111, sharey = self.tomography_ax)
         self.a_scan_ax.plot()
         self.a_scan_ax.invert_yaxis()
-#        self.plot = Qwt.QwtPlot()
-#        size_policy = QSizePolicy()
-#        size_policy.setHorizontalStretch(1) 
-#        size_policy.setHorizontalPolicy(size_policy.Preferred) 
-#        size_policy.setVerticalPolicy(size_policy.Preferred) 
-#        self.plot.setSizePolicy(size_policy)
-##        self.plot.enableAxis(Qwt.QwtPlot.yLeft, False)
-#        self.plot.enableAxis(Qwt.QwtPlot.xBottom, False)
-#
-#        grid = Qwt.QwtPlotGrid()
-#        grid.attach(self.plot)
-#        grid.setPen(Qt.QPen(Qt.Qt.white, 0, Qt.Qt.DotLine))
-#        self.plot.setCanvasBackground(Qt.Qt.black)
-#        self.plot_holder_widget.children()[0].addWidget(self.plot)
-#
-#        self.curve = Qwt.QwtPlotCurve()
-#        self.curve.attach(self.plot)
-#        self.curve.setPen(Qt.QPen(Qt.Qt.green, 1))
+        self.canvas_a_scan.draw()
 
     def update_image(self, index):
-        self.current_image = index - 1
+        self.current_image = index
         self.plot_in_tomography_view(self.processed_data[self.current_image])
         
     def setup_camera(self):
-        self.camera_view = CameraGraphicsView()
-        self.widget_7.children()[0].addWidget(self.camera_view)
+#        self.camera_view = CameraGraphicsView()
+#        self.camera_widget.addWidget(self.camera_view)
+#        vbox = QVBoxLayout()
+#        vbox.addWidget()
+#        self.tomography_widget.setLayout(vbox)
 
         self.camera_scene = QGraphicsScene()
         self.camera_view.setScene(self.camera_scene)
@@ -374,7 +435,6 @@ class OCT (QtGui.QMainWindow, form_class):
         QObject.connect(self.d2, SIGNAL('clicked()'), self.change_selector) 
         QObject.connect(self.d3, SIGNAL('clicked()'), self.change_selector) 
         self.d2.click()
-
 
     def update_camera_image(self):
         if hasattr(self,"camera_pixmap"):
@@ -475,13 +535,19 @@ class OCT (QtGui.QMainWindow, form_class):
         self.set_xticks(self.tomography_ax)
         self.set_yticks(self.tomography_ax)
         self.adjust_aspect_ratio()
-        self.canvas.draw()
+        self.canvas_tomography.draw()
 
     def adjust_aspect_ratio(self):
         shape = self.current_tomography_data.shape
         length = self.current_tomography_length()*1000
         depth = self.config["z_resolution"]*shape[0]
         self.tomography_ax.set_aspect(depth/length)
+
+    def x_resolution(self):
+        length = self.current_tomography_length()
+        lines = self.current_tomography_data.shape[0]
+        return 1000*length/lines
+
 
     def current_tomography_length(self):
         sr = self.config[self.scan_type]
@@ -523,14 +589,14 @@ class OCT (QtGui.QMainWindow, form_class):
 #        self.tomography_view.fitInView(self.tomography_scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
 
     def resize_tomography_view(self):
-        holder_aspect_ratio = aspect_ratio(self.tomography_holder_widget.rect())
+        holder_aspect_ratio = aspect_ratio(self.tomography_widget.rect())
         tomography_aspect_ratio = aspect_ratio(self.tomography_image)
         if holder_aspect_ratio > tomography_aspect_ratio:
-            width = self.tomography_holder_widget.width()
+            width = self.tomography_widget.width()
             self.tomography_view.setFixedHeight(tomography_aspect_ratio*width)
             self.tomography_view.setFixedWidth(width)
         else:
-            height = self.tomography_holder_widget.height()
+            height = self.tomography_widget.height()
             self.tomography_view.setFixedWidth(height/tomography_aspect_ratio)
             self.tomography_view.setFixedHeight(height)
 
@@ -539,10 +605,14 @@ class OCT (QtGui.QMainWindow, form_class):
         self.processed_data += [data]
         n_images = len(self.processed_data)
         self.current_image = n_images - 1
-        self.select_image.setMaximum(n_images)
+        self.select_image.setMaximum(n_images-1)
         self.select_image.setValue(self.current_image)
-        self.saturation_spinbox.setValue(np.average(data)+30)
-        self.black_spinbox.setValue(np.average(data))
+        if not self.lock_adjust_checkbox.isChecked():
+            self.saturation_spinbox.setValue(np.average(data)+30)
+            self.black_spinbox.setValue(np.average(data))
+
+    def save_current_tomography(self):
+        pass
 
     def start_acquisition(self):
         self.DataCollector.start()
@@ -552,7 +622,7 @@ class OCT (QtGui.QMainWindow, form_class):
 #        cmd = ["python", "doct.py", "-o", self.config['raw_file'], "--scan-single" ]
 #        self.acquisition = subprocess.Popen(cmd)
 
-    def save_serie(self):
+    def save_serie_dialog(self):
         if save_serie_dialog._exec():
             print save_serie_dialog.save_file_path.text()
 
@@ -573,6 +643,5 @@ def aspect_ratio(item):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     main_window = OCT()
-    save_serie_dialog = SaveSerieDialog()
     main_window.show()
     app.exec_()
