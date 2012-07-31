@@ -455,7 +455,7 @@ class OCT (QtGui.QMainWindow, form_class):
     def change_selector(self):
         if self.d2.isChecked():
             self.scan_type = "continuous"
-            self.selector = lambda start, end: self.camera_scene.addLine(QLineF(start, end))
+            self.selector = lambda start, end: self.camera_scene.addLine(QLineF(start, end), QPen(Qt.Qt.red, 1))
             self.n_images_spinbox.setEnabled(False)
         else:
             self.scan_type = "3D"
@@ -467,7 +467,7 @@ class OCT (QtGui.QMainWindow, form_class):
         self.update_n_images_spinbox()
 
     def area_select(self, start, end):
-        return self.camera_scene.addRect(QRectF(start, end))
+        return self.camera_scene.addRect(QRectF(start, end), QPen(Qt.Qt.red, 1))
 
     def camera_pressed(self, event):
         self.pressed_pos = event.scenePos()
@@ -516,7 +516,7 @@ class OCT (QtGui.QMainWindow, form_class):
 
     def select_rect(self, start, end):
         start, end = self.fix_rect_points(start, end)
-        return self.camera_scene.addRect(QRectF(start, end))
+        return self.camera_scene.addRect(QRectF(start, end), QPen(Qt.Qt.red, 1))
 
     def save_processed_data(self, filename):
         import h5py
