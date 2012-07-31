@@ -171,7 +171,7 @@ class Path:
         xf,yf = self.xf,self.yf
         numTomograms = self.numTomograms
         numRecords = self.numRecords
-        path = make_scan_3D_path(x0,y0,xf,y0,numTomograms,numRecords)
+        path = make_scan_3D_path(x0,y0,xf,yf,numTomograms,numRecords)
         #this takes care of the memory arrangement
         return np.ascontiguousarray(path)
 
