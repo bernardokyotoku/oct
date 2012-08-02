@@ -451,7 +451,11 @@ class OCT (QtGui.QMainWindow, form_class):
         logger.debug("selecting scan type %s"%self.scan_type)
         self.update_n_lines_spinbox()
         self.update_n_images_spinbox()
+        self.item = self.selector(*self.get_start_end())
 
+    def get_start_end(self):
+        c = self.config[self.scan_type]
+        return QPointF(c['x0'],c['y0']), QPointF(c['xf'],c['yf'])
 
     def camera_pressed(self, event):
         self.pressed_pos = event.scenePos()
