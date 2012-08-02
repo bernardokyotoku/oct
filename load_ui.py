@@ -118,12 +118,12 @@ class OCT (QtGui.QMainWindow, form_class):
         self.setupUi(self)
         self.setup_icon()
         self.config = processor.parse_config()
+        self.setup_data_collector()
         self.setup_tomography()
         self.setup_a_scan()
         self.setup_camera()
         self.processed_data = []
         self.current_image = 0
-        self.setup_data_collector()
         self.setup_signals()
         self.apply_config()
 
