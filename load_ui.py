@@ -106,6 +106,11 @@ class Processor(QtCore.QThread):
         logger.debug("data dim %s"%str(data.shape))
         self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), data)
 
+    def block_after_acquisition(self):
+        self.queue.maxsize = 1
+
+    def buffer_acquisition(self):
+        self.queue.maxsize = 0
 
 class OCT (QtGui.QMainWindow, form_class):
     def __init__(self,parent = None, selected = [], flag = 0, *args):
@@ -433,10 +438,12 @@ class OCT (QtGui.QMainWindow, form_class):
     def change_selector(self):
         if self.d2.isChecked():
             self.scan_type = "continuous"
+            self.processor.block_after_acquisition()
             self.selector = lambda start, end: self.camera_scene.addLine(QLineF(start, end), QPen(Qt.Qt.red, 1))
             self.n_images_spinbox.setEnabled(False)
         else:
             self.scan_type = "3D"
+            self.processor.buffer_acquisition()
             self.selector = self.select_rect
 #            self.selector = lambda start, end: self.camera_scene.addRect(QRectF(start, end))
             self.n_images_spinbox.setEnabled(True)
