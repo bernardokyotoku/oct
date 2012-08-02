@@ -299,7 +299,7 @@ class OCT (QtGui.QMainWindow, form_class):
         root = h5py.File(filename + '.h5', 'w')
         tomography = root.create_dataset('tomography', data.shape, dtype = data.dtype)
         tomography[:] = data
-        tomography.attrs['PixelXDimension'] = round(self.x_resolution(), 3)
+        tomography.attrs['PixelXDimension'] = round(self.x_resolution, 3)
         tomography.attrs['PixelYDimension'] = round(self.config['z_resolution'], 3)
         tomography.attrs['ResolutionUnit'] = 'um'
         tomography.attrs['DateTime'] = datetime.datetime.now().ctime()
@@ -530,7 +530,11 @@ class OCT (QtGui.QMainWindow, form_class):
         length = self.current_tomography_length()*1000
         depth = self.config["z_resolution"]*shape[0]
         self.tomography_ax.set_aspect(depth/length)
+    @property
+    def z_resolution(self):
+        return self.config['z_resolution']
 
+    @property
     def x_resolution(self):
         length = self.current_tomography_length()
         lines = self.current_tomography_data.shape[0]
