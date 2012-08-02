@@ -526,10 +526,9 @@ class OCT (QtGui.QMainWindow, form_class):
         self.canvas_tomography.draw()
 
     def adjust_aspect_ratio(self):
-        shape = self.current_tomography_data.shape
-        length = self.current_tomography_length()*1000
-        depth = self.config["z_resolution"]*shape[0]
-        self.tomography_ax.set_aspect(depth/length)
+        ar = self.z_resolution/self.x_resolution
+        self.tomography_ax.set_aspect(ar)
+
     @property
     def z_resolution(self):
         return self.config['z_resolution']
@@ -537,7 +536,7 @@ class OCT (QtGui.QMainWindow, form_class):
     @property
     def x_resolution(self):
         length = self.current_tomography_length()
-        lines = self.current_tomography_data.shape[0]
+        lines = self.current_tomography_data.shape[1]
         return 1000*length/lines
 
 
