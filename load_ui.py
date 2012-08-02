@@ -47,31 +47,6 @@ def gray2qimage(gray):
         result.setColor(i, QtGui.QColor(i, i, i).rgb())
     return result
 
-class AcquirerProcessor(QtCore.QThread):
-    def __init__(self, parent=None):
-        self.config = parent.config
-        QtCore.QThread.__init__(self, parent)
-
-    def run(self):
-        filename = self.config['raw_file']
-        self.fd = open(filename)
-        logger.debug("Creating unpickler")
-        self.unpickler = cPickle.Unpickler(self.fd)
-        while True:
-            try:
-                logger.debug("data_collector is waiting for data.")
-                self.data = self.unpickler.load()
-            except EOFError, e:
-                logger.debug("End of file.")
-                self.fd.close()
-                return
-            self.prev = self.data
-            logger.debug("std dev %.2e"%np.std(self.data))
-            parameters = {"brightness":-00, "contrast":2}
-            self.data = processor.process(self.data, parameters, self.config)
-            logger.debug("Emitting data ready to showing")
-            logger.debug("std dev processed %.2e"%np.std(self.data))
-            self.emit(QtCore.SIGNAL("data_ready(PyQt_PyObject)"), self.data)
 
 class AcquirerProcessor2(QtCore.QThread):
     def __init__(self, parent = None):
