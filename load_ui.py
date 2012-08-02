@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, subprocess, cPickle, numpy as np, Image, tempfile, os, logging, datetime
+import sys, subprocess, cPickle, numpy as np, Image, tempfile, os, logging, datetime, hardware_control as hc
 from configobj import ConfigObj
 from PyQt4 import QtCore, QtGui, uic
 from Queue import Queue
@@ -154,6 +154,9 @@ class OCT (QtGui.QMainWindow, form_class):
     def apply_config(self):
         self.update_n_lines_spinbox()
         self.update_n_images_spinbox()
+
+    def laser_pointer(self, state):
+        hc.turn_laser('on' if state else 'off')
 
     def setup_signals(self):
         signals = [
