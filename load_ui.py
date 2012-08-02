@@ -441,12 +441,14 @@ class OCT (QtGui.QMainWindow, form_class):
             self.processor.block_after_acquisition()
             self.selector = lambda start, end: self.camera_scene.addLine(QLineF(start, end), QPen(Qt.Qt.red, 1))
             self.n_images_spinbox.setEnabled(False)
+            self.serie_spinbox.setEnabled(False)
         else:
             self.scan_type = "3D"
             self.processor.buffer_acquisition()
             self.selector = self.select_rect
 #            self.selector = lambda start, end: self.camera_scene.addRect(QRectF(start, end))
             self.n_images_spinbox.setEnabled(True)
+            self.serie_spinbox.setEnabled(True)
         logger.debug("selecting scan type %s"%self.scan_type)
         self.update_n_lines_spinbox()
         self.update_n_images_spinbox()
